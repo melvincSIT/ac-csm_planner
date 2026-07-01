@@ -1,0 +1,226 @@
+{
+  "title": "Applied Computing Degree (via CSM Pathway)",
+  "institution": "Singapore Institute of Technology",
+  "source": "Candidature Plan_30 Jun 26 v2.xlsx + SIT programme page (verified Jul 2026)",
+  "sitUrl": "https://www.singaporetech.edu.sg/undergraduate-programmes/applied-computing-csm",
+  "totalCredits": 180,
+  "mcCredits": 18,
+  "mcCount": 8,
+  "foundationCount": 2,
+  "stackableCount": 6,
+  "wfeCcCredits": 20,
+  "capstoneCredits": 16,
+  "maxCoreTrimesters": 9,
+  "maxExtensionTrimesters": 8,
+  "maxTotalTrimesters": 17,
+  "monthCycle": ["Sep", "Jan", "May"],
+  "constraints": {
+    "wfeRiweYear": 2,
+    "capstoneMinYear": 3,
+    "wfeCcNote": "Career Catalyst offered every trimester",
+    "wfeRiweNote": "Relevant Industry Work Experience only in Year 2",
+    "capstoneNote": "Capstone can only start in Year 3 (trimesters 7–9)"
+  },
+  "offeringsByMonth": {
+    "Sep": ["dlc", "isma", "genai"],
+    "Jan": ["ethical", "mse", "ml"],
+    "May": ["cloud", "netsec", "cyber", "dlts"]
+  },
+  "foundationSlots": {
+    "Foundation MC 1": "Digital Logic & Computing",
+    "Foundation MC 2": "Ethical Computing & Data Analytics"
+  },
+  "prerequisites": {
+    "wfeRiwe": {
+      "description": "After 3 micro-credentials OR 2 micro-credentials + Career Catalyst",
+      "minMc": 3,
+      "altMinMc": 2,
+      "durationTrimesters": 2
+    },
+    "capstone": {
+      "description": "After 6 micro-credentials OR 5 micro-credentials + Career Catalyst",
+      "minMc": 6,
+      "altMinMc": 5,
+      "durationTrimesters": 3
+    }
+  },
+  "courses": [
+    {
+      "id": "dlc",
+      "name": "Digital Logic & Computing",
+      "sitName": "Digital Logic and Computing",
+      "category": "foundation",
+      "credits": 18,
+      "intakeMonth": "Sep"
+    },
+    {
+      "id": "ethical",
+      "name": "Ethical Computing & Data Analytics",
+      "sitName": "Ethical Computing and Data Analysis",
+      "category": "foundation",
+      "credits": 18,
+      "intakeMonth": "Jan"
+    },
+    {
+      "id": "isma",
+      "name": "Information Security Management & Audit",
+      "sitName": "Information Security Risk Management and Audit",
+      "category": "stackable",
+      "credits": 18,
+      "intakeMonth": "Sep"
+    },
+    {
+      "id": "mse",
+      "name": "Modern Software Engineering Practices",
+      "sitName": "Modern Software Engineering Practices",
+      "category": "stackable",
+      "credits": 18,
+      "intakeMonth": "Jan"
+    },
+    {
+      "id": "cloud",
+      "name": "Cloud Architecting & Security",
+      "sitName": "Cloud Architecting and Security",
+      "category": "stackable",
+      "credits": 18,
+      "intakeMonth": "May"
+    },
+    {
+      "id": "ml",
+      "name": "Machine Learning",
+      "sitName": "Machine Learning",
+      "category": "stackable",
+      "credits": 18,
+      "intakeMonth": "Jan"
+    },
+    {
+      "id": "netsec",
+      "name": "Computer Networking & Network Security",
+      "sitName": "Computer Networking and Network Security",
+      "category": "stackable",
+      "credits": 18,
+      "intakeMonth": "May"
+    },
+    {
+      "id": "cyber",
+      "name": "Cybersecurity",
+      "sitName": "Cybersecurity",
+      "category": "stackable",
+      "credits": 18,
+      "intakeMonth": "May"
+    },
+    {
+      "id": "genai",
+      "name": "Advanced Generative Text Artificial Intelligence",
+      "sitName": "Advanced Generative Text Artificial Intelligence",
+      "category": "stackable",
+      "credits": 18,
+      "intakeMonth": "Sep"
+    },
+    {
+      "id": "dlts",
+      "name": "Deep Learning Forecasting with Time Series Analysis",
+      "sitName": "Deep Learning Forecasting with Time Series Analysis",
+      "category": "stackable",
+      "credits": 18,
+      "intakeMonth": "May"
+    }
+  ],
+  "components": [
+    {
+      "id": "wfe_cc",
+      "name": "Career Catalyst",
+      "credits": 20,
+      "kind": "wfe_cc"
+    },
+    {
+      "id": "wfe_riwe",
+      "name": "Relevant Industry Work Experience",
+      "credits": 0,
+      "kind": "riwe"
+    },
+    {
+      "id": "capstone",
+      "name": "Capstone Project",
+      "credits": 16,
+      "kind": "capstone"
+    }
+  ],
+  "intakes": {
+    "sep": {
+      "label": "Sep",
+      "startMonth": "Sep",
+      "idealFirstAttempt": [
+        "Foundation MC 1",
+        "Foundation MC 2",
+        "WFE-CC",
+        "MC 3",
+        "MC 4",
+        "MC 5",
+        "MC 6",
+        "MC 7",
+        "MC 8",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "wfeRiweTrimesters": [4, 5],
+      "capstoneTrimesters": [7, 8, 9]
+    },
+    "jan": {
+      "label": "Jan",
+      "startMonth": "Jan",
+      "idealFirstAttempt": [
+        "Foundation MC 2",
+        "WFE-CC",
+        "Foundation MC 1",
+        "MC 3",
+        "MC 4",
+        "MC 5",
+        "MC 6",
+        "MC 7",
+        "MC 8",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "wfeRiweTrimesters": [4, 5],
+      "capstoneTrimesters": [7, 8, 9]
+    },
+    "may": {
+      "label": "May",
+      "startMonth": "May",
+      "idealFirstAttempt": [
+        "WFE-CC",
+        "Foundation MC 1",
+        "Foundation MC 2",
+        "MC 3",
+        "MC 4",
+        "MC 5",
+        "MC 6",
+        "MC 7",
+        "MC 8",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "wfeRiweTrimesters": [4, 5],
+      "capstoneTrimesters": [7, 8, 9]
+    }
+  }
+}

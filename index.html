@@ -1,0 +1,2295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSM Candidature Planner | SIT Applied Computing</title>
+  <style>
+    :root {
+      --bg: #eef1f5;
+      --card: #fff;
+      --text: #1a2332;
+      --muted: #5c6b7a;
+      --border: #cfd6df;
+      --accent: #c8102e;
+      --foundation: #3d6db3;
+      --foundation-bg: #e8f0fa;
+      --stackable: #1f7a55;
+      --stackable-bg: #e4f5ed;
+      --stackable-muted: #b8d9c8;
+      --wfe: #c8102e;
+      --wfe-bg: #fde8ec;
+      --riwe: #d97706;
+      --riwe-bg: #fef3e2;
+      --capstone: #6d4cbd;
+      --capstone-bg: #f0ebfa;
+      --ok: #0d7a4e;
+      --ok-bg: #e6f4ee;
+      --warn: #9a6700;
+      --warn-bg: #fff8e6;
+      --err: #b42318;
+      --shadow: 0 2px 10px rgba(26, 35, 50, 0.07);
+      --tile-sm: 36px;
+      --tile-min-h: 58px;
+      --tile-max-w: 120px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+    }
+    header {
+      background: linear-gradient(135deg, #1a2332 0%, #2c3e50 100%);
+      color: #fff;
+      padding: 1.1rem 0;
+    }
+    .header-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 1.25rem;
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .header-brand {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    header h1 { margin: 0 0 0.2rem; font-size: 1.3rem; font-weight: 600; }
+    header p { margin: 0; opacity: 0.85; font-size: 0.88rem; }
+    .header-clear {
+      flex: 0 0 auto;
+      height: 2.1rem;
+      padding: 0 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .header-clear:hover {
+      background: rgba(255, 255, 255, 0.18);
+      filter: none;
+    }
+    main { max-width: 1440px; margin: 0 auto; padding: 1rem 1.25rem 2rem; }
+
+    .controls {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      position: relative;
+      gap: 1rem 1.5rem;
+      flex-wrap: wrap;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 9.5rem 1rem 1.15rem;
+      margin-bottom: 0.85rem;
+      box-shadow: var(--shadow);
+    }
+    .controls-primary {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 1rem 1.25rem;
+      flex-wrap: wrap;
+    }
+    .controls .ctrl-field {
+      flex: 0 1 auto;
+      min-width: 0;
+    }
+    .ctrl-cohort {
+      flex: 0 0 auto;
+      min-width: 15.5rem;
+      width: 15.5rem;
+    }
+    .ctrl-duration {
+      flex: 0 0 auto;
+      min-width: 12rem;
+      width: 14rem;
+      max-width: 28rem;
+    }
+    .ctrl-control {
+      display: block;
+      width: 100%;
+      height: 2.4rem;
+      margin: 0;
+      padding: 0 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: calc(2.4rem - 2px);
+      box-sizing: border-box;
+      color: var(--text);
+      text-align: left;
+    }
+    .controls button.ctrl-control {
+      display: flex;
+      align-items: center;
+      line-height: 1.2;
+      cursor: pointer;
+      filter: none;
+    }
+    select.ctrl-control {
+      padding-right: 2rem;
+      appearance: none;
+      -webkit-appearance: none;
+      background-color: #fff;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%235c6b7a' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.65rem center;
+      background-size: 0.65rem auto;
+      cursor: pointer;
+    }
+    .export-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-shrink: 0;
+      position: absolute;
+      right: 1.15rem;
+      bottom: 1rem;
+    }
+    .icon-btn {
+      width: 2.4rem;
+      height: 2.4rem;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .icon-btn svg {
+      width: 1.15rem;
+      height: 1.15rem;
+      fill: currentColor;
+      display: block;
+    }
+    .icon-btn:hover {
+      background: #f4f6f9;
+      filter: none;
+    }
+    .ctrl-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+    .ctrl-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      line-height: 1.2;
+    }
+    .cohort-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+      margin-bottom: 0.85rem;
+    }
+    .cohort-dialog .help-dialog-inner p {
+      margin: 0 0 0.75rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .ctrl-value {
+      display: flex;
+      align-items: center;
+      height: 2.4rem;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .ctrl-foot {
+      font-size: 0.7rem;
+      color: var(--muted);
+      min-height: 1rem;
+      line-height: 1.15;
+    }
+    select:not(.ctrl-control),
+    button:not(.ctrl-control):not(.icon-btn):not(.header-clear):not(.toolbar-btn):not(.seg-available):not(.seg-selected) {
+      font: inherit;
+      padding: 0.45rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+    select:not(.ctrl-control) {
+      height: 2.4rem;
+      width: 100%;
+      font-size: 0.88rem;
+    }
+    button {
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      font-weight: 600;
+      height: 2.4rem;
+      padding: 0 0.9rem;
+      white-space: nowrap;
+      font-size: 0.88rem;
+    }
+    button.secondary { background: #fff; color: var(--text); }
+    button:hover { filter: brightness(1.04); }
+
+    /* Credit tracker (integrated in timeline) */
+    .timeline-title {
+      margin: 0 0 0.85rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-align: center;
+    }
+    .timeline-credit {
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .credit-toolbar {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      gap: 0.85rem 1rem;
+      flex-wrap: wrap;
+    }
+    .credit-summary {
+      flex: 0 0 auto;
+      width: 9.5rem;
+      min-height: 4.85rem;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-sizing: border-box;
+      position: relative;
+      overflow: visible;
+    }
+    .credit-summary h3 {
+      margin: 0 0 0.3rem;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .credit-total {
+      font-size: 1.65rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .credit-total span { font-size: 0.9rem; font-weight: 500; color: var(--muted); }
+    .credit-total.complete { color: var(--ok); }
+    .grad-cap {
+      position: absolute;
+      top: -0.55rem;
+      right: -0.4rem;
+      width: 2.2rem;
+      height: 2.2rem;
+      color: var(--ok);
+      filter: drop-shadow(0 2px 5px rgba(13, 122, 78, 0.28));
+      pointer-events: none;
+      transform-origin: center bottom;
+    }
+    .grad-cap-icon {
+      width: 100%;
+      height: 100%;
+      display: block;
+      fill: currentColor;
+    }
+    .grad-cap-rest {
+      opacity: 1;
+      transform: rotate(0deg);
+    }
+    .grad-cap-pop {
+      animation: gradCapPop 0.72s cubic-bezier(0.34, 1.45, 0.64, 1) forwards;
+    }
+    @keyframes gradCapPop {
+      0% {
+        opacity: 0;
+        transform: scale(0.12) translateY(1.6rem) rotate(-20deg);
+      }
+      62% {
+        opacity: 1;
+        transform: scale(1.18) translateY(-0.25rem) rotate(7deg);
+      }
+      82% {
+        transform: scale(0.96) translateY(0.05rem) rotate(-2deg);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0) rotate(0deg);
+      }
+    }
+    .progress-bar {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+      width: 100%;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--foundation), var(--stackable), var(--wfe), var(--capstone));
+      border-radius: 5px;
+      transition: width 0.25s ease;
+    }
+    .credit-stats {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.28rem;
+      width: 4.15rem;
+      min-height: 4.85rem;
+      padding: 0.35rem 0.18rem 0.3rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fafbfc;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+    .stat-count-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 0.12rem;
+      height: 40px;
+      width: 100%;
+    }
+    .stat-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 1.05rem;
+      font-weight: 800;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .stat-denom {
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: var(--muted);
+      line-height: 1;
+      padding-bottom: 0.4rem;
+      flex-shrink: 0;
+    }
+    .stat-name {
+      font-size: 0.5rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.01em;
+      text-align: center;
+      line-height: 1.12;
+      min-height: 1.45rem;
+      max-height: 1.45rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      overflow: hidden;
+      hyphens: none;
+    }
+    .stat-foundation .stat-badge { background: var(--foundation-bg); color: var(--foundation); }
+    .stat-foundation .stat-name { color: var(--foundation); }
+    .stat-stackable .stat-badge { background: var(--stackable-bg); color: var(--stackable); }
+    .stat-stackable .stat-name { color: var(--stackable); }
+    .stat-wfe .stat-badge { background: var(--wfe-bg); color: var(--wfe); }
+    .stat-wfe .stat-name { color: var(--wfe); }
+    .stat-capstone .stat-badge { background: var(--capstone-bg); color: var(--capstone); }
+    .stat-capstone .stat-name { color: var(--capstone); }
+    .stat-mc .stat-badge { background: #e8edf4; color: #2d4156; }
+    .stat-mc .stat-name { color: #2d4156; }
+    .credit-toolbar .toolbar-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1 1 0;
+      min-height: 0;
+      height: auto;
+      width: 100%;
+      margin: 0;
+      padding: 0.18rem 0.15rem;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-size: 0.5rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.01em;
+      line-height: 1.1;
+      text-align: center;
+      border-radius: 8px;
+      flex-shrink: 0;
+      white-space: normal;
+      box-sizing: border-box;
+      background: #fafbfc;
+      color: #2d4156;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      filter: none;
+    }
+    .credit-toolbar .toolbar-btn:hover {
+      background: #f0f3f7;
+      border-color: #b8c4d0;
+      filter: none;
+    }
+    .toolbar-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.28rem;
+      flex-shrink: 0;
+      width: 4.15rem;
+      min-height: 4.85rem;
+      box-sizing: border-box;
+    }
+
+    .timeline-wrap {
+      overflow-x: auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 1rem 1.15rem;
+      margin-bottom: 0.85rem;
+    }
+    .help-dialog {
+      border: none;
+      border-radius: 12px;
+      padding: 0;
+      max-width: 22rem;
+      width: calc(100% - 2rem);
+      box-shadow: 0 12px 40px rgba(26, 35, 50, 0.18);
+    }
+    .help-dialog::backdrop {
+      background: rgba(26, 35, 50, 0.35);
+      backdrop-filter: blur(2px);
+    }
+    .help-dialog-inner {
+      padding: 1.1rem 1.2rem 1rem;
+    }
+    .help-dialog h3 {
+      margin: 0 0 0.65rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+    .help-dialog p {
+      margin: 0 0 0.5rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .help-dialog ul {
+      margin: 0 0 0.85rem;
+      padding-left: 1.15rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .help-dialog li { margin: 0.2rem 0; }
+    .help-dialog li strong { color: var(--text); }
+    .help-dialog-close {
+      width: 100%;
+      height: 2.25rem;
+    }
+    .print-help-note {
+      font-size: 0.76rem !important;
+      color: var(--muted);
+      margin-bottom: 0.85rem !important;
+    }
+    table.timeline {
+      border-collapse: separate;
+      border-spacing: 3px 4px;
+      min-width: 1080px;
+      width: 100%;
+      font-size: 0.85rem;
+    }
+    .timeline th {
+      font-weight: 600;
+      text-align: center;
+      padding: 0.35rem 0.25rem;
+      font-size: 0.76rem;
+      color: var(--text);
+    }
+    .timeline th.corner {
+      position: sticky;
+      left: 0;
+      z-index: 4;
+      background: var(--card);
+      min-width: 72px;
+      max-width: 76px;
+      vertical-align: middle;
+      padding: 0.3rem 0.25rem;
+    }
+    .timeline th.head-label {
+      font-size: 0.58rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--muted);
+      text-align: center;
+      white-space: pre-line;
+      line-height: 1.18;
+      vertical-align: middle;
+    }
+    .timeline th.head-label.period-corner {
+      border-bottom: 2px solid var(--border);
+      vertical-align: bottom;
+      padding-bottom: 0.32rem;
+    }
+    .cohort-btn {
+      justify-content: space-between;
+      gap: 0.5rem;
+      border-color: #7a9bb8;
+      background: linear-gradient(165deg, #fafcfd 0%, #e4edf5 100%);
+      cursor: pointer;
+      transition: border-color 0.15s;
+      text-align: left;
+    }
+    .cohort-btn.ctrl-control {
+      background: linear-gradient(165deg, #fafcfd 0%, #e4edf5 100%);
+      color: var(--text);
+      border-color: #7a9bb8;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+    .cohort-btn.ctrl-control:hover {
+      border-color: #4a6d8f;
+      filter: none;
+    }
+    .cohort-btn:focus-visible {
+      outline: 2px solid #4a6d8f;
+      outline-offset: 2px;
+    }
+    .cohort-display {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      min-width: 0;
+      flex: 1 1 auto;
+      white-space: nowrap;
+    }
+    .cohort-btn .cohort-month,
+    .cohort-btn .cohort-year {
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .cohort-btn .cohort-month { color: #2d4156; }
+    .cohort-btn .cohort-year { color: #3d6282; font-weight: 700; }
+    .cohort-btn .cohort-change {
+      flex-shrink: 0;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #5a7d9e;
+      white-space: nowrap;
+      margin-left: 0.25rem;
+    }
+    .timeline th.ay-header {
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.25rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+    .timeline th.ay-header.ext {
+      background: #fff8ee !important;
+      color: #9a6700 !important;
+    }
+    .timeline th.ay-header.fade-start {
+      mask-image: linear-gradient(to right, transparent 0%, #000 22%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 22%);
+    }
+    .timeline th.ay-header.fade-end {
+      mask-image: linear-gradient(to left, transparent 0%, #000 22%);
+      -webkit-mask-image: linear-gradient(to left, transparent 0%, #000 22%);
+    }
+    .timeline th.ay-header.fade-start.fade-end {
+      mask-image: linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%);
+    }
+    .timeline th.tri-header {
+      font-weight: 500;
+      padding: 0.3rem 0.2rem 0.12rem;
+      vertical-align: middle;
+      text-align: center;
+      background: #fff;
+    }
+    .timeline th.tri-header .tri-num {
+      display: inline-block;
+      font-size: 0.76rem;
+      font-weight: 800;
+      line-height: 1.2;
+      color: var(--tri-accent, #2d4156);
+    }
+    .timeline th.period-header {
+      font-weight: 500;
+      padding: 0.15rem 0.15rem 0.32rem;
+      vertical-align: bottom;
+      text-align: center;
+      border-bottom: 2px solid var(--border);
+      background: #fff;
+    }
+    .timeline th.break-col.period-break {
+      vertical-align: bottom;
+      text-align: center;
+      border-bottom: 2px solid var(--border);
+      padding: 0.15rem 1px 0.32rem;
+    }
+    .period-slot {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 1px;
+      min-height: 1.75rem;
+    }
+    .month-tabs {
+      display: flex;
+      gap: 2px;
+      justify-content: center;
+      align-items: center;
+      height: 1.1rem;
+      min-height: 1.1rem;
+      width: 100%;
+    }
+    .month-tab {
+      flex: 1;
+      min-width: 0;
+      height: 1.1rem;
+      min-height: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.52rem;
+      font-weight: 800;
+      padding: 0 1px;
+      border-radius: 3px;
+      text-align: center;
+      line-height: 1;
+      background: #f0f3f7;
+      border: 1px solid color-mix(in srgb, var(--tri-accent, #5a7d9e) 45%, var(--border));
+      color: var(--tri-accent, #2d4156);
+      box-sizing: border-box;
+    }
+    .break-tabs {
+      justify-content: center;
+      width: 100%;
+    }
+    .break-stack {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 1px;
+      min-height: 1.75rem;
+      width: 100%;
+    }
+    .break-label {
+      display: block;
+      width: 100%;
+      font-size: 0.38rem;
+      font-weight: 700;
+      color: #8a96a3;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .break-month-tab {
+      width: 100%;
+      font-size: 0.5rem;
+      background: #eef1f5;
+      border-color: #c5ced8;
+      color: #6b7a88;
+      text-align: center;
+      justify-content: center;
+    }
+    .timeline th.break-col,
+    .timeline td.break-cell {
+      width: 20px;
+      min-width: 20px;
+      max-width: 20px;
+      padding: 0 1px;
+      vertical-align: middle;
+      background: transparent;
+      border: none;
+    }
+    .timeline th.break-col.tri-break {
+      padding: 0.3rem 0;
+      vertical-align: middle;
+    }
+    .timeline th.break-col {
+      font-weight: 500;
+      padding: 0.2rem 0;
+    }
+    .timeline th.col-fade-start {
+      mask-image: linear-gradient(to right, transparent 0%, #000 30%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 30%);
+    }
+    .timeline th.col-fade-end {
+      mask-image: linear-gradient(to left, transparent 0%, #000 30%);
+      -webkit-mask-image: linear-gradient(to left, transparent 0%, #000 30%);
+    }
+    .timeline th.col-fade-start {
+      position: relative;
+    }
+    .timeline th.col-fade-end {
+      position: relative;
+    }
+    .timeline th.col-fade-start::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 45%;
+      background: linear-gradient(to right, var(--card) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 1;
+      border-radius: inherit;
+    }
+    .timeline th.col-fade-end::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 45%;
+      background: linear-gradient(to left, var(--card) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 1;
+      border-radius: inherit;
+    }
+    .timeline td.col-tint {
+      border-top: 2px solid color-mix(in srgb, var(--col-accent, var(--border)) 55%, transparent);
+      background-color: #fff;
+    }
+    .timeline th.tri-header.ext .tri-num { color: #8a5c14; }
+    .timeline td.row-label {
+      font-weight: 600;
+      font-size: 0.76rem;
+      color: var(--text);
+      text-align: center;
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
+      white-space: pre-line;
+      line-height: 1.25;
+      vertical-align: middle;
+      min-width: 72px;
+      max-width: 76px;
+      position: sticky;
+      left: 0;
+      background: var(--card);
+      z-index: 2;
+    }
+    .timeline td.cell {
+      vertical-align: top;
+      min-width: 108px;
+      max-width: 128px;
+      padding: 2px;
+    }
+    .timeline td.cum-cell {
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.35rem;
+      border-radius: 6px;
+      background: #f7f9fc;
+    }
+    .timeline td.cum-cell:empty {
+      background: transparent;
+    }
+    .timeline td.cum-cell.milestone { background: var(--ok-bg); color: var(--ok); }
+
+    .tile-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+      min-height: var(--tile-min-h);
+    }
+    .tile {
+      width: 100%;
+      max-width: var(--tile-max-w);
+      min-height: var(--tile-min-h);
+      border: 2px solid transparent;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.62rem;
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.2;
+      padding: 4px;
+      cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.12s;
+      user-select: none;
+      white-space: pre-line;
+      overflow-wrap: normal;
+      word-break: normal;
+      hyphens: none;
+    }
+    .tile:hover { transform: scale(1.06); box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+    .tile.foundation { background: var(--foundation-bg); color: var(--foundation); border-color: var(--foundation); }
+    .tile.stackable { background: var(--stackable-bg); color: var(--stackable); border-color: var(--stackable); }
+    .tile.wfe_cc { background: var(--wfe-bg); color: var(--wfe); border-color: var(--wfe); }
+    .tile.riwe { background: var(--riwe-bg); color: var(--riwe); border-color: var(--riwe); }
+    .tile.capstone { background: var(--capstone-bg); color: var(--capstone); border-color: var(--capstone); }
+    .tile.leave { background: #f4f6f8; color: var(--muted); border-color: #b8c2cc; border-style: dashed; }
+    .tile.leave.selected { background: #e8ecf0; color: var(--text); border-style: solid; }
+    .tile.leave.compact {
+      min-height: 1.65rem;
+      padding: 2px 5px;
+      font-size: 0.54rem;
+      line-height: 1.15;
+    }
+    .cc-row td.cell { padding: 1px 2px; vertical-align: middle; }
+    .cc-row .tile-grid { min-height: 0; align-items: center; }
+    .cc-row .tile.wfe_cc {
+      min-height: 1.65rem;
+      padding: 2px 5px;
+      font-size: 0.54rem;
+      line-height: 1.15;
+    }
+    .capstone-row .capstone-span-cell { padding: 2px; vertical-align: middle; }
+    .capstone-row .tile-grid.capstone-span-grid {
+      min-height: var(--tile-min-h);
+      align-items: stretch;
+    }
+    .capstone-row .tile.capstone-span {
+      max-width: none;
+      width: 100%;
+      min-height: var(--tile-min-h);
+    }
+    .leave-row td.cell { padding: 1px 2px; vertical-align: middle; }
+    .leave-row .tile-grid { min-height: 0; align-items: center; }
+    .tile.option { opacity: 0.72; border-style: dashed; }
+    .tile.option:hover { opacity: 1; }
+    .tile.selected {
+      opacity: 1;
+      box-shadow: 0 0 0 2px var(--text);
+      transform: scale(1.02);
+    }
+    .tile.empty-slot {
+      width: 100%;
+      min-height: var(--tile-min-h);
+      border: 2px dashed var(--border);
+      border-radius: 6px;
+      background: #fafbfc;
+      cursor: default;
+    }
+    .tile.tile-compact {
+      max-width: var(--tile-max-w);
+      font-size: 0.55rem;
+    }
+
+    /* Catalog */
+    .catalog {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.15rem;
+      margin-bottom: 0.85rem;
+      box-shadow: var(--shadow);
+    }
+    .catalog-intro {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.55rem;
+      margin-bottom: 1.15rem;
+    }
+    .catalog-intro h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .catalog-view-toggle {
+      display: inline-flex;
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, #eef2f7 0%, #e4e9f0 100%);
+      box-shadow: inset 0 1px 2px rgba(26, 35, 50, 0.04);
+    }
+    .catalog-view-toggle button {
+      height: 2.1rem;
+      min-width: 5.5rem;
+      padding: 0 1rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      box-shadow: none;
+      filter: none;
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    }
+    .catalog-view-toggle button.active {
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .catalog-view-toggle button.active[data-view="available"] {
+      background: linear-gradient(145deg, #1f7a55 0%, #2a9b6a 100%);
+      box-shadow: 0 3px 12px rgba(31, 122, 85, 0.4), 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+    }
+    .catalog-view-toggle button.active[data-view="selected"] {
+      background: linear-gradient(145deg, #3d6db3 0%, #5a8fd4 100%);
+      box-shadow: 0 3px 12px rgba(61, 109, 179, 0.4), 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+    }
+    .catalog-view-toggle button:hover:not(.active) {
+      color: var(--text);
+      filter: none;
+      background: rgba(255, 255, 255, 0.55);
+    }
+    .catalog-matrix {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem 0.85rem;
+      align-items: start;
+    }
+    .catalog-column {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .catalog-col-head {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+      line-height: 1.25;
+    }
+    .catalog-pills {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .catalog-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.48rem 0.5rem 0.42rem;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .catalog-card-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      line-height: 1.3;
+      white-space: pre-line;
+      overflow-wrap: normal;
+      word-break: normal;
+    }
+    .catalog-card-meta {
+      font-size: 0.62rem;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+    .catalog-card.foundation { border-color: var(--foundation); background: var(--foundation-bg); color: var(--foundation); }
+    .catalog-card.stackable { border-color: var(--stackable); background: var(--stackable-bg); color: var(--stackable); }
+    .catalog-card.wfe_cc { border-color: var(--wfe); background: var(--wfe-bg); color: var(--wfe); }
+    .catalog-card.riwe { border-color: var(--riwe); background: var(--riwe-bg); color: var(--riwe); }
+    .catalog-card.capstone { border-color: var(--capstone); background: var(--capstone-bg); color: var(--capstone); }
+    .catalog-view-available .catalog-card.selected,
+    .catalog-view-selected .catalog-card:not(.selected) {
+      background: #f4f6f9;
+      color: var(--muted);
+      border-color: var(--border);
+      opacity: 0.58;
+      font-weight: 500;
+    }
+    .catalog-view-available .catalog-card:not(.selected),
+    .catalog-view-selected .catalog-card.selected {
+      opacity: 1;
+      font-weight: 700;
+    }
+    .catalog-section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin: 0.5rem 0 0.35rem;
+      min-height: 0.95rem;
+    }
+    .catalog-section-label:first-child {
+      margin-top: 0;
+    }
+    .catalog-section-label.foundation-tag {
+      color: var(--foundation);
+    }
+    .catalog-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem 1.25rem;
+      justify-content: center;
+      align-items: center;
+      margin-top: 0.85rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    .swatch {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .issues {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: var(--shadow);
+    }
+    .issues h2 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+    .issues ul { margin: 0; padding-left: 1.2rem; font-size: 0.85rem; }
+    .issues li.error { color: var(--err); }
+    .issues li.warn { color: var(--warn); }
+    .issues li.info { color: var(--muted); }
+
+    footer {
+      margin-top: 1.25rem;
+      font-size: 0.76rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    footer a { color: var(--accent); }
+
+    @media (max-width: 900px) {
+      .controls { flex-direction: column; align-items: stretch; position: static; padding: 1rem 1.15rem; }
+      .controls-primary { width: 100%; justify-content: stretch; }
+      .ctrl-duration { max-width: none; width: auto; flex: 1 1 auto; }
+      .export-actions { position: static; justify-content: flex-end; margin-top: 0.25rem; }
+      .catalog-matrix { grid-template-columns: 1fr 1fr; }
+      .credit-toolbar { justify-content: center; }
+    }
+    @media (max-width: 640px) {
+      .header-top { align-items: flex-start; }
+      .header-clear { height: 2rem; padding: 0 0.65rem; font-size: 0.78rem; }
+      .cohort-inputs { grid-template-columns: 1fr; }
+    }
+    @media print {
+      @page { size: A3 landscape; margin: 6mm; }
+      .header-clear,
+      .controls,
+      .toolbar-btn,
+      .help-dialog,
+      footer { display: none !important; }
+      main { padding: 0; max-width: none; }
+      body { background: #fff; }
+      .timeline-wrap,
+      .catalog,
+      .issues {
+        box-shadow: none;
+        page-break-inside: avoid;
+      }
+      .timeline-wrap { overflow: visible !important; }
+      table.timeline { min-width: 100%; width: max-content; }
+      .timeline th.corner,
+      .timeline td.row-label { position: static !important; }
+      .tile.option { display: none !important; }
+      .tile, .stat-badge, .catalog-card, .timeline th.ay-header, .timeline td.col-tint {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .cohort-btn { border-style: solid; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-top">
+        <div class="header-brand">
+          <h1>CSM Candidature Planner</h1>
+          <p>Applied Computing Degree (via CSM Pathway) · Singapore Institute of Technology</p>
+        </div>
+        <button type="button" class="header-clear" id="clearBtn">Clear all</button>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section class="controls">
+      <div class="controls-primary">
+        <div class="ctrl-field ctrl-cohort">
+          <span class="ctrl-label">Cohort start</span>
+          <button type="button" class="cohort-btn ctrl-control" id="cohortBtn" aria-haspopup="dialog" aria-label="Change cohort start date">
+            <span class="cohort-display"><span class="cohort-month">—</span><span class="cohort-year"></span></span>
+            <span class="cohort-change">Change ▾</span>
+          </button>
+        </div>
+        <div class="ctrl-field ctrl-duration">
+          <span class="ctrl-label">Programme duration</span>
+          <select id="programmeDuration" class="ctrl-control" aria-label="Programme duration"></select>
+        </div>
+      </div>
+      <div class="export-actions">
+        <button type="button" class="icon-btn" id="printBtn" title="Print plan" aria-label="Print plan">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-1 11H6v-4h12v4zm1-9a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-3-5H8v4h9V5z"/></svg>
+        </button>
+        <button type="button" class="icon-btn" id="pdfBtn" title="Save as PDF" aria-label="Save as PDF">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM8 13h2v5H8v-5zm3 0h2a2 2 0 0 1 0 4h-2v-5zm5 0h2v1h-2v1h2v1h-2v2h-2v-5h2z"/></svg>
+        </button>
+        <button type="button" class="icon-btn" id="emailBtn" title="Email plan" aria-label="Email plan">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5L4 8V6l8 5 8-5v2z"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <div class="timeline-wrap">
+      <h2 class="timeline-title">Your candidature timeline</h2>
+      <div class="timeline-credit">
+        <div class="credit-toolbar">
+          <div id="creditProgress"></div>
+          <div class="credit-stats" id="creditStats"></div>
+          <div class="toolbar-actions">
+            <button type="button" class="toolbar-btn" id="planHelpBtn" aria-haspopup="dialog">How to plan</button>
+            <button type="button" class="toolbar-btn" id="suggestBtn">Auto</button>
+          </div>
+        </div>
+      </div>
+      <table class="timeline">
+        <thead id="timelineHead"></thead>
+        <tbody id="timelineBody"></tbody>
+      </table>
+    </div>
+
+    <dialog id="cohortDialog" class="help-dialog cohort-dialog" aria-labelledby="cohortDialogTitle">
+      <div class="help-dialog-inner">
+        <h3 id="cohortDialogTitle">Cohort start</h3>
+        <p>Choose when your candidature begins. Changing intake month clears your plan.</p>
+        <div class="cohort-inputs">
+          <select id="intakeYear" aria-label="Start year"></select>
+          <select id="intake" aria-label="Start month"></select>
+        </div>
+        <button type="button" class="help-dialog-close secondary" id="cohortDialogClose">Done</button>
+      </div>
+    </dialog>
+
+    <dialog id="planHelpDialog" class="help-dialog" aria-labelledby="planHelpTitle">
+      <div class="help-dialog-inner">
+        <h3 id="planHelpTitle">How to plan</h3>
+        <p>Click a coloured tile to assign a module to that trimester. Click again to remove it.</p>
+        <ul>
+          <li><strong>Leave</strong> — bottom row; mark trimesters when you are not studying.</li>
+          <li><strong>Career Catalyst</strong> — available in any trimester, but not in the same trimester as a micro-credential.</li>
+          <li><strong>Industry Work Experience</strong> — programme Year 2 only; available after 3 micro-credentials, or 2 micro-credentials plus Career Catalyst. Once eligible, it stays available in each subsequent Year 2 trimester until selected.</li>
+          <li><strong>Capstone</strong> — programme Year 3 only; available after 6 micro-credentials, or 5 micro-credentials plus Career Catalyst.</li>
+        </ul>
+        <button type="button" class="help-dialog-close secondary" id="planHelpClose">Got it</button>
+      </div>
+    </dialog>
+
+    <dialog id="printHelpDialog" class="help-dialog print-help-dialog" aria-labelledby="printHelpTitle">
+      <div class="help-dialog-inner">
+        <h3 id="printHelpTitle">Landscape orientation</h3>
+        <p>Your plan is formatted for <strong>landscape</strong> printing. In the print dialog that opens next, set <strong>Orientation</strong> to <strong>Landscape</strong> so the timeline fits on one page.</p>
+        <p id="printHelpPdfHint" class="print-help-pdf-hint" hidden>To save as PDF, choose <strong>Save as PDF</strong> (or similar) as the destination.</p>
+        <p class="print-help-note">Browsers cannot switch orientation automatically — you may need to change it once in the print dialog.</p>
+        <button type="button" class="help-dialog-close" id="printHelpContinue">Continue</button>
+      </div>
+    </dialog>
+
+    <section class="catalog" id="catalog"></section>
+
+    <section class="issues">
+      <h2>Validation</h2>
+      <ul id="issuesList"></ul>
+    </section>
+
+    <footer>
+      Designed by a random Year 3 Student (2026).
+    </footer>
+  </main>
+
+  <script src="data-embed.js"></script>
+  <script src="planner.js"></script>
+  <script>
+    let data, plan, intakeKey, startYear;
+    let creditsWereComplete = false;
+    let catalogView = 'available';
+
+    function populateYearOptions() {
+      const sel = document.getElementById('intakeYear');
+      sel.innerHTML = '';
+      const endYear = new Date().getFullYear() + 4;
+      for (let y = 2024; y <= endYear; y++) {
+        const o = document.createElement('option');
+        o.value = String(y);
+        o.textContent = String(y);
+        sel.appendChild(o);
+      }
+      sel.value = String(Math.max(2024, new Date().getFullYear()));
+    }
+
+    function ensurePlanShape() {
+      if (!plan.leave) {
+        plan.leave = new Array(data.maxTotalTrimesters).fill(false);
+      }
+      while (plan.mc.length < data.maxTotalTrimesters) {
+        plan.mc.push(CSMPlanner.EMPTY);
+      }
+      while (plan.leave.length < data.maxTotalTrimesters) {
+        plan.leave.push(false);
+      }
+    }
+
+    function maxTrimestersVisible() {
+      const ext = parseInt(document.getElementById('programmeDuration').value, 10);
+      return data.maxCoreTrimesters + ext;
+    }
+
+    function formatTotalDuration(extensionTrimesters) {
+      const totalMonths = 36 + extensionTrimesters * 3;
+      const years = Math.floor(totalMonths / 12);
+      const months = totalMonths % 12;
+      const parts = [];
+      if (years > 0) parts.push(`${years} year${years === 1 ? '' : 's'}`);
+      if (months > 0) parts.push(`${months} month${months === 1 ? '' : 's'}`);
+      return parts.join(' ');
+    }
+
+    function populateProgrammeDuration() {
+      const sel = document.getElementById('programmeDuration');
+      sel.innerHTML = '';
+      const maxExt = data.maxTotalTrimesters - data.maxCoreTrimesters;
+      for (let n = 0; n <= maxExt; n++) {
+        const o = document.createElement('option');
+        o.value = String(n);
+        o.textContent = formatTotalDuration(n);
+        sel.appendChild(o);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function getPageStyles() {
+      return Array.from(document.querySelectorAll('style'))
+        .map((s) => s.textContent)
+        .join('\n');
+    }
+
+    function exportStyleOverrides() {
+      return `
+        @page { size: A3 landscape; margin: 6mm; }
+        html, body {
+          margin: 0;
+          padding: 0;
+          background: #fff;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .export-doc {
+          padding: 10px 12px 14px;
+          max-width: none;
+        }
+        .export-meta {
+          margin-bottom: 10px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #cfd6df;
+        }
+        .export-meta h1 {
+          margin: 0 0 6px;
+          font-size: 1.15rem;
+          font-weight: 700;
+          color: #1a2332;
+        }
+        .export-meta-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.35rem 1.5rem;
+          font-size: 0.82rem;
+          color: #5c6b7a;
+        }
+        .export-meta-grid strong { color: #1a2332; }
+        .export-meta-status { font-weight: 600; }
+        .export-meta-status.ready { color: #0d7a4e; }
+        .export-meta-status.pending { color: #9a6700; }
+        .timeline-wrap,
+        .catalog,
+        .issues {
+          overflow: visible !important;
+          box-shadow: none;
+          margin-bottom: 10px;
+          page-break-inside: avoid;
+        }
+        .timeline-wrap { padding: 0.75rem 0.85rem; }
+        .timeline-title { margin-top: 0; }
+        table.timeline {
+          min-width: 100%;
+          width: max-content;
+          font-size: 0.68rem;
+        }
+        .timeline th.corner,
+        .timeline td.row-label {
+          position: static !important;
+        }
+        .timeline th.ay-header.fade-start,
+        .timeline th.ay-header.fade-end,
+        .timeline th.col-fade-start,
+        .timeline th.col-fade-end {
+          mask-image: none !important;
+          -webkit-mask-image: none !important;
+        }
+        .timeline th.col-fade-start::before,
+        .timeline th.col-fade-end::after,
+        .timeline td.col-fade-start::before,
+        .timeline td.col-fade-end::after {
+          display: none !important;
+        }
+        .tile.option,
+        .toolbar-btn { display: none !important; }
+        .tile, .stat-badge, .catalog-card, .timeline th.ay-header,
+        .timeline td.col-tint, .month-tab, .break-month-tab {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .catalog-matrix { gap: 0.5rem 0.65rem; }
+        .catalog-card { page-break-inside: avoid; }
+      `;
+    }
+
+    function buildExportMetaHtml() {
+      const analysis = CSMPlanner.analyze(plan, intakeKey);
+      const cohort = CSMPlanner.cohortLabel(intakeKey, startYear);
+      const durationSel = document.getElementById('programmeDuration');
+      const duration = durationSel.options[durationSel.selectedIndex].textContent;
+      const statusClass = analysis.ready ? 'ready' : 'pending';
+      const statusText = analysis.ready
+        ? 'Meets graduation requirements'
+        : 'Incomplete or has validation issues';
+      return `
+        <div class="export-meta">
+          <h1>CSM Candidature Plan</h1>
+          <div class="export-meta-grid">
+            <span><strong>Cohort:</strong> ${escapeHtml(cohort)}</span>
+            <span><strong>Duration:</strong> ${escapeHtml(duration)}</span>
+            <span><strong>Credits:</strong> ${analysis.breakdown.total} / ${data.totalCredits}</span>
+            <span class="export-meta-status ${statusClass}">${escapeHtml(statusText)}</span>
+          </div>
+        </div>`;
+    }
+
+    function cloneExportContent() {
+      const container = document.createElement('div');
+      container.className = 'export-doc';
+      container.innerHTML = buildExportMetaHtml();
+
+      const timeline = document.querySelector('.timeline-wrap').cloneNode(true);
+      timeline.querySelectorAll('.toolbar-btn').forEach((el) => el.remove());
+      timeline.querySelectorAll('.tile.option').forEach((el) => el.remove());
+      container.appendChild(timeline);
+
+      const catalog = document.getElementById('catalog').cloneNode(true);
+      container.appendChild(catalog);
+
+      const issues = document.querySelector('.issues').cloneNode(true);
+      container.appendChild(issues);
+
+      return container.outerHTML;
+    }
+
+    function buildExportHtml() {
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CSM Candidature Plan</title>
+  <style>
+${getPageStyles()}
+${exportStyleOverrides()}
+  </style>
+</head>
+<body>
+${cloneExportContent()}
+</body>
+</html>`;
+    }
+
+    function exportFilename() {
+      return `csm-plan-${startYear}-${intakeKey}.html`;
+    }
+
+    function downloadExportHtml() {
+      const html = buildExportHtml();
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = exportFilename();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      return a.download;
+    }
+
+    function openExportWindow(triggerPrint) {
+      const html = buildExportHtml();
+      const w = window.open('', '_blank');
+      if (!w) {
+        alert('Please allow pop-ups to export your plan.');
+        return null;
+      }
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+      if (triggerPrint) {
+        const printWhenReady = () => {
+          w.focus();
+          w.print();
+        };
+        if (w.document.readyState === 'complete') {
+          setTimeout(printWhenReady, 300);
+        } else {
+          w.addEventListener('load', () => setTimeout(printWhenReady, 300));
+        }
+      }
+      return w;
+    }
+
+    function buildPlanSummary() {
+      const analysis = CSMPlanner.analyze(plan, intakeKey);
+      const bd = analysis.breakdown;
+      const cohort = CSMPlanner.cohortLabel(intakeKey, startYear);
+      const ext = parseInt(document.getElementById('programmeDuration').value, 10);
+      const maxT = maxTrimestersVisible();
+      const lines = [
+        'CSM Candidature Plan',
+        cohort,
+        `Duration: ${formatTotalDuration(ext)}`,
+        `Credits: ${bd.total}/${data.totalCredits}`,
+        '',
+      ];
+      for (let t = 1; t <= maxT; t++) {
+        const parts = [];
+        const mc = plan.mc[t - 1];
+        if (mc) {
+          const info = CSMPlanner.selectionLabel(mc);
+          parts.push(info.name);
+        }
+        if (plan.careerCatalystAt === t) parts.push(CSMPlanner.componentName('wfe_cc'));
+        if (CSMPlanner.isRiweActiveTrimester(plan, intakeKey, t)) {
+          parts.push(CSMPlanner.componentName('riwe'));
+        }
+        if (plan.capstone && data.intakes[intakeKey].capstoneTrimesters.includes(t)) {
+          parts.push(CSMPlanner.componentName('capstone'));
+        }
+        if (CSMPlanner.isOnLeave(plan, t)) parts.push('Leave');
+        if (parts.length) {
+          lines.push(`${CSMPlanner.trimesterLabel(intakeKey, t, startYear)}: ${parts.join(', ')}`);
+        }
+      }
+      if (analysis.issues.length) {
+        lines.push('', 'Validation:');
+        analysis.issues.forEach((i) => lines.push(`- ${i.msg}`));
+      }
+      return lines.join('\n');
+    }
+
+    let pendingLandscapeExport = null;
+
+    function showLandscapePrintHint(mode) {
+      pendingLandscapeExport = mode;
+      const dlg = document.getElementById('printHelpDialog');
+      document.getElementById('printHelpPdfHint').hidden = mode !== 'pdf';
+      dlg.showModal();
+    }
+
+    function runPendingLandscapeExport() {
+      const mode = pendingLandscapeExport;
+      pendingLandscapeExport = null;
+      if (mode === 'print') {
+        openExportWindow(true);
+      } else if (mode === 'pdf') {
+        downloadExportHtml();
+        openExportWindow(true);
+      }
+    }
+
+    function exportPrint() {
+      showLandscapePrintHint('print');
+    }
+
+    function exportPdf() {
+      showLandscapePrintHint('pdf');
+    }
+
+    function exportEmail() {
+      const filename = downloadExportHtml();
+      const analysis = CSMPlanner.analyze(plan, intakeKey);
+      const cohort = CSMPlanner.cohortLabel(intakeKey, startYear);
+      const subject = encodeURIComponent('CSM Candidature Plan');
+      const body = encodeURIComponent(
+        'CSM Candidature Plan\n\n' +
+          `Cohort: ${cohort}\n` +
+          `Credits: ${analysis.breakdown.total}/${data.totalCredits}\n` +
+          `Status: ${analysis.ready ? 'Ready for graduation' : 'See validation notes in export'}\n\n` +
+          `A graphical copy of your plan has been downloaded as "${filename}". ` +
+          'Please attach that file to this email.\n\n' +
+          'To save as PDF: open the attachment in your browser and choose Print → Save as PDF (landscape).'
+      );
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    }
+
+    function updateCohortBtn() {
+      const cohort = CSMPlanner.cohortParts(intakeKey, startYear);
+      const btn = document.getElementById('cohortBtn');
+      btn.querySelector('.cohort-month').textContent = cohort.month;
+      btn.querySelector('.cohort-year').textContent = cohort.year;
+    }
+
+    function toggleLeave(trimester) {
+      const idx = trimester - 1;
+      const next = !plan.leave[idx];
+      plan.leave[idx] = next;
+      if (next) {
+        plan.mc[idx] = CSMPlanner.EMPTY;
+        if (plan.careerCatalystAt === trimester) plan.careerCatalystAt = null;
+        if (plan.riweAt != null && CSMPlanner.isRiweActiveTrimester(plan, intakeKey, trimester)) {
+          plan.riweAt = null;
+        }
+      }
+      render();
+    }
+
+    async function init() {
+      data = await CSMPlanner.loadData();
+
+      const intakeSel = document.getElementById('intake');
+      const monthNames = { sep: 'September', jan: 'January', may: 'May' };
+      Object.entries(data.intakes).forEach(([k]) => {
+        const o = document.createElement('option');
+        o.value = k;
+        o.textContent = monthNames[k] || data.intakes[k].label;
+        intakeSel.appendChild(o);
+      });
+
+      populateYearOptions();
+      populateProgrammeDuration();
+
+      intakeKey = intakeSel.value;
+      startYear = parseInt(document.getElementById('intakeYear').value, 10);
+      plan = CSMPlanner.emptyPlan();
+
+      intakeSel.addEventListener('change', () => {
+        intakeKey = intakeSel.value;
+        plan = CSMPlanner.emptyPlan();
+        creditsWereComplete = false;
+        render();
+      });
+      document.getElementById('intakeYear').addEventListener('change', () => {
+        startYear = parseInt(document.getElementById('intakeYear').value, 10);
+        render();
+      });
+      document.getElementById('programmeDuration').addEventListener('change', () => {
+        render();
+      });
+      document.getElementById('clearBtn').addEventListener('click', () => {
+        plan = CSMPlanner.emptyPlan();
+        creditsWereComplete = false;
+        catalogView = 'available';
+        render();
+      });
+      document.getElementById('suggestBtn').addEventListener('click', () => {
+        plan = CSMPlanner.suggestPlan(intakeKey);
+        render();
+      });
+      document.getElementById('printBtn').addEventListener('click', exportPrint);
+      document.getElementById('pdfBtn').addEventListener('click', exportPdf);
+      document.getElementById('emailBtn').addEventListener('click', exportEmail);
+
+      const helpDlg = document.getElementById('planHelpDialog');
+      document.getElementById('planHelpBtn').addEventListener('click', () => helpDlg.showModal());
+      document.getElementById('planHelpClose').addEventListener('click', () => helpDlg.close());
+      helpDlg.addEventListener('click', (e) => {
+        if (e.target === helpDlg) helpDlg.close();
+      });
+
+      const printHelpDlg = document.getElementById('printHelpDialog');
+      document.getElementById('printHelpContinue').addEventListener('click', () => {
+        printHelpDlg.close();
+        runPendingLandscapeExport();
+      });
+      printHelpDlg.addEventListener('click', (e) => {
+        if (e.target === printHelpDlg) {
+          pendingLandscapeExport = null;
+          printHelpDlg.close();
+        }
+      });
+      printHelpDlg.addEventListener('cancel', () => {
+        pendingLandscapeExport = null;
+      });
+
+      const cohortDlg = document.getElementById('cohortDialog');
+      document.getElementById('cohortBtn').addEventListener('click', () => cohortDlg.showModal());
+      document.getElementById('cohortDialogClose').addEventListener('click', () => cohortDlg.close());
+      cohortDlg.addEventListener('click', (e) => {
+        if (e.target === cohortDlg) cohortDlg.close();
+      });
+
+      render();
+    }
+
+    function finishTriCell(td, trimester, ayGroups) {
+      const meta = CSMPlanner.trimesterMeta(intakeKey, startYear, trimester);
+      const palette = CSMPlanner.ayPalette(meta.ayStartYear);
+      td.classList.add('col-tint');
+      td.style.setProperty('--col-accent', meta.ext ? '#c9a86a' : palette.accent);
+    }
+
+    function decorateTriHeader(th, trimester, ayGroups) {
+      const meta = CSMPlanner.trimesterMeta(intakeKey, startYear, trimester);
+      const palette = CSMPlanner.ayPalette(meta.ayStartYear);
+      const group = CSMPlanner.ayGroupForTrimester(ayGroups, trimester);
+
+      if (meta.ext) {
+        th.style.backgroundColor = '#faf8f4';
+        th.style.setProperty('--tri-accent', '#8a5c14');
+      } else {
+        th.style.backgroundColor = '#fff';
+        th.style.color = palette.text;
+        th.style.setProperty('--tri-accent', palette.accent);
+      }
+
+      if (group) {
+        if (group.fadeStart && trimester === group.startTri) th.classList.add('col-fade-start');
+        if (group.fadeEnd && trimester === group.endTri) th.classList.add('col-fade-end');
+      }
+    }
+
+    function decoratePeriodHeader(th, trimester, ayGroups) {
+      const meta = CSMPlanner.trimesterMeta(intakeKey, startYear, trimester);
+      const palette = CSMPlanner.ayPalette(meta.ayStartYear);
+
+      if (meta.ext) {
+        th.style.backgroundColor = '#faf8f4';
+        th.style.setProperty('--tri-accent', '#8a5c14');
+      } else {
+        th.style.backgroundColor = '#fff';
+        th.style.setProperty('--tri-accent', palette.accent);
+      }
+    }
+
+    function makeBreakHeader(trimester, rowKind) {
+      const meta = CSMPlanner.trimesterMeta(intakeKey, startYear, trimester);
+      const th = document.createElement('th');
+      if (rowKind === 'tri') {
+        th.className = 'break-col tri-break';
+        th.setAttribute('aria-hidden', 'true');
+      } else {
+        th.className = 'break-col period-break';
+        th.innerHTML =
+          `<div class="break-stack">` +
+          `<span class="break-label">Break</span>` +
+          `<div class="month-tabs break-tabs">` +
+          `<span class="month-tab break-month-tab">${meta.breakMonth}</span>` +
+          `</div></div>`;
+      }
+      th.title = `${meta.breakLabel} between trimesters`;
+      return th;
+    }
+
+    function makeBreakBodyCell() {
+      const td = document.createElement('td');
+      td.className = 'break-cell';
+      return td;
+    }
+
+    function appendTriColumns(row, maxT, triFn) {
+      for (let t = 1; t <= maxT; t++) {
+        row.appendChild(triFn(t));
+        if (t < maxT) row.appendChild(makeBreakBodyCell());
+      }
+    }
+
+    function render() {
+      ensurePlanShape();
+      const maxT = maxTrimestersVisible();
+      const intake = data.intakes[intakeKey];
+      const analysis = CSMPlanner.analyze(plan, intakeKey);
+      const bd = analysis.breakdown;
+
+      const pct = Math.min(100, Math.round((bd.total / data.totalCredits) * 100));
+      const complete = bd.total >= data.totalCredits;
+      const gradCapAnim = complete && !creditsWereComplete;
+      creditsWereComplete = complete;
+      const gradCapSvg =
+        '<svg class="grad-cap-icon" viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M12 2.5L2 8.2v2.1l2-.95V16c0 .2.1.4.3.5L12 21l7.7-4.5c.2-.1.3-.3.3-.5v-6.65l2 .95V8.2L12 2.5zm0 2.35l6.9 3.6L12 12.05 5.1 8.45 12 4.85zM6 10.35l6 3.15 6-3.15V15l-6 3.5-6-3.5v-4.65z"/>' +
+        '</svg>';
+      document.getElementById('creditProgress').innerHTML = `
+        <div class="credit-summary${complete ? ' complete' : ''}">
+          <h3>Credits</h3>
+          <div class="credit-total${complete ? ' complete' : ''}">${bd.total}<span> / ${data.totalCredits}</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          ${
+            complete
+              ? `<div class="grad-cap${gradCapAnim ? ' grad-cap-pop' : ' grad-cap-rest'}" aria-hidden="true">${gradCapSvg}</div>`
+              : ''
+          }
+        </div>`;
+      document.getElementById('creditStats').innerHTML = `
+        <div class="stat-card stat-foundation">
+          <div class="stat-count-row">
+            <div class="stat-badge" title="Foundation credits">${bd.foundation}</div>
+            <span class="stat-denom">/36</span>
+          </div>
+          <div class="stat-name" title="Foundation">Found.</div>
+        </div>
+        <div class="stat-card stat-stackable">
+          <div class="stat-count-row">
+            <div class="stat-badge" title="Stackable credits">${bd.stackable}</div>
+            <span class="stat-denom">/108</span>
+          </div>
+          <div class="stat-name" title="Stackable">Stack.</div>
+        </div>
+        <div class="stat-card stat-wfe">
+          <div class="stat-count-row">
+            <div class="stat-badge" title="Career Catalyst credits">${bd.wfeCc}</div>
+            <span class="stat-denom">/20</span>
+          </div>
+          <div class="stat-name" title="Career Catalyst">Catalyst</div>
+        </div>
+        <div class="stat-card stat-capstone">
+          <div class="stat-count-row">
+            <div class="stat-badge" title="Capstone credits">${bd.capstone}</div>
+            <span class="stat-denom">/16</span>
+          </div>
+          <div class="stat-name" title="Capstone">Capstone</div>
+        </div>
+        <div class="stat-card stat-mc">
+          <div class="stat-count-row">
+            <div class="stat-badge" title="Micro-Credentials scheduled">${analysis.counts.mc}</div>
+            <span class="stat-denom">/8</span>
+          </div>
+          <div class="stat-name" title="Micro-Credentials">Micro-Cred.</div>
+        </div>`;
+
+      renderTimeline(maxT, intake, analysis);
+      renderCatalog();
+      renderIssues(analysis);
+      updateCohortBtn();
+    }
+
+    function renderTimeline(maxT, intake, analysis) {
+      const ayGroups = buildTimelineHead(maxT);
+
+      const body = document.getElementById('timelineBody');
+      body.innerHTML = '';
+
+      const cumRow = document.createElement('tr');
+      cumRow.innerHTML = '<td class="row-label">Cumulative\ncredits</td>';
+      appendTriColumns(cumRow, maxT, (t) => {
+        const td = document.createElement('td');
+        td.className = 'cum-cell';
+        if (CSMPlanner.showCumulativeAtTrimester(plan, intakeKey, t, maxT)) {
+          const cum = CSMPlanner.cumulativeCredits(plan, intakeKey, t);
+          if (cum >= data.totalCredits) td.classList.add('milestone');
+          td.textContent = String(cum);
+          td.title = `Total credits earned through ${CSMPlanner.trimesterLabel(intakeKey, t, startYear)}`;
+        }
+        finishTriCell(td, t, ayGroups);
+        return td;
+      });
+      body.appendChild(cumRow);
+
+      const mcRow = document.createElement('tr');
+      mcRow.innerHTML = '<td class="row-label">Micro-\ncredential</td>';
+      appendTriColumns(mcRow, maxT, (t) => buildMcCell(t, intake, ayGroups));
+      body.appendChild(mcRow);
+
+      const ccRow = document.createElement('tr');
+      ccRow.className = 'cc-row';
+      ccRow.innerHTML = `<td class="row-label">${CSMPlanner.rowLabelText(CSMPlanner.componentName('wfe_cc'))}</td>`;
+      appendTriColumns(ccRow, maxT, (t) => buildCareerCatalystCell(t, ayGroups));
+      body.appendChild(ccRow);
+
+      const riweRow = document.createElement('tr');
+      riweRow.innerHTML = `<td class="row-label">${CSMPlanner.rowLabelText(CSMPlanner.componentName('riwe'))}</td>`;
+      appendTriColumns(riweRow, maxT, (t) => buildRiweCell(t, ayGroups));
+      body.appendChild(riweRow);
+      body.appendChild(buildCapstoneRow(intake, maxT, ayGroups));
+
+      const leaveRow = document.createElement('tr');
+      leaveRow.className = 'leave-row';
+      leaveRow.innerHTML = '<td class="row-label">Leave</td>';
+      appendTriColumns(leaveRow, maxT, (t) => buildLeaveCell(t, ayGroups));
+      body.appendChild(leaveRow);
+    }
+
+    function buildTimelineHead(maxT) {
+      const head = document.getElementById('timelineHead');
+      head.innerHTML = '';
+      const groups = CSMPlanner.buildAyGroups(intakeKey, startYear, maxT);
+
+      const ayCorner = document.createElement('th');
+      ayCorner.className = 'corner head-label';
+      ayCorner.textContent = 'Academic\nYear';
+
+      const ayRow = document.createElement('tr');
+      ayRow.className = 'ay-row';
+      ayRow.appendChild(ayCorner);
+
+      groups.forEach((g) => {
+        const palette = CSMPlanner.ayPalette(g.ayStartYear);
+        const th = document.createElement('th');
+        th.colSpan = CSMPlanner.colsForTriRange(g.startTri, g.endTri, maxT);
+        th.className = 'ay-header' + (g.ext ? ' ext' : '');
+        if (g.fadeStart) th.classList.add('fade-start');
+        if (g.fadeEnd) th.classList.add('fade-end');
+        if (!g.ext) {
+          th.style.backgroundColor = palette.bg;
+          th.style.color = palette.text;
+        }
+        th.textContent = g.ext ? `${g.ayLabel} · extension` : g.ayLabel;
+        ayRow.appendChild(th);
+      });
+
+      const triRow = document.createElement('tr');
+      triRow.className = 'tri-row';
+      const triCorner = document.createElement('th');
+      triCorner.className = 'corner head-label';
+      triCorner.textContent = 'Trimester';
+      triRow.appendChild(triCorner);
+      for (let t = 1; t <= maxT; t++) {
+        const meta = CSMPlanner.trimesterMeta(intakeKey, startYear, t);
+        const th = document.createElement('th');
+        th.className = 'tri-header' + (meta.ext ? ' ext' : '');
+        th.innerHTML = `<span class="tri-num">T${meta.triInAy}</span>`;
+        th.title = `${meta.ayLabel} · trimester ${meta.triInAy} of academic year`;
+        decorateTriHeader(th, t, groups);
+        triRow.appendChild(th);
+        if (t < maxT) triRow.appendChild(makeBreakHeader(t, 'tri'));
+      }
+
+      const periodRow = document.createElement('tr');
+      periodRow.className = 'period-row';
+      const periodCorner = document.createElement('th');
+      periodCorner.className = 'corner head-label period-corner';
+      periodCorner.innerHTML = '&nbsp;';
+      periodRow.appendChild(periodCorner);
+      for (let t = 1; t <= maxT; t++) {
+        const meta = CSMPlanner.trimesterMeta(intakeKey, startYear, t);
+        const th = document.createElement('th');
+        th.className = 'period-header' + (meta.ext ? ' ext' : '');
+        th.innerHTML =
+          `<div class="period-slot">` +
+          `<div class="month-tabs">${meta.periodMonths
+            .map((m) => `<span class="month-tab">${m}</span>`)
+            .join('')}</div></div>`;
+        th.title = `${meta.periodLabel} · ${meta.breakLabel}`;
+        decoratePeriodHeader(th, t, groups);
+        periodRow.appendChild(th);
+        if (t < maxT) periodRow.appendChild(makeBreakHeader(t, 'period'));
+      }
+
+      head.appendChild(ayRow);
+      head.appendChild(triRow);
+      head.appendChild(periodRow);
+      return groups;
+    }
+
+    function buildLeaveCell(trimester, ayGroups) {
+      const td = document.createElement('td');
+      td.className = 'cell';
+      const grid = document.createElement('div');
+      grid.className = 'tile-grid';
+      const onLeave = CSMPlanner.isOnLeave(plan, trimester);
+      const tile = makeTile(onLeave ? 'On leave' : 'Leave', 'leave', onLeave);
+      tile.classList.add('compact');
+      tile.title = onLeave
+        ? 'On leave this trimester — click to clear'
+        : 'Mark this trimester as leave (no modules)';
+      tile.addEventListener('click', () => toggleLeave(trimester));
+      grid.appendChild(tile);
+      td.appendChild(grid);
+      finishTriCell(td, trimester, ayGroups);
+      return td;
+    }
+
+    function buildMcCell(trimester, intake, ayGroups) {
+      const td = document.createElement('td');
+      td.className = 'cell';
+      const grid = document.createElement('div');
+      grid.className = 'tile-grid';
+
+      if (CSMPlanner.isOnLeave(plan, trimester)) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-slot';
+        empty.title = 'On leave — no micro-credential this trimester';
+        grid.appendChild(empty);
+        td.appendChild(grid);
+        finishTriCell(td, trimester, ayGroups);
+        return td;
+      }
+
+      if (plan.careerCatalystAt === trimester) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-slot';
+        empty.title = 'Career Catalyst scheduled this trimester — no micro-credential';
+        grid.appendChild(empty);
+        td.appendChild(grid);
+        finishTriCell(td, trimester, ayGroups);
+        return td;
+      }
+
+      const current = plan.mc[trimester - 1];
+
+      if (current) {
+        const info = CSMPlanner.selectionLabel(current);
+        const tile = makeTile(info.name, info.kind, true);
+        tile.title = info.name + ' — click to remove';
+        tile.addEventListener('click', () => {
+          plan.mc[trimester - 1] = CSMPlanner.EMPTY;
+          render();
+        });
+        grid.appendChild(tile);
+      } else if (CSMPlanner.canAssignMc(trimester, plan)) {
+        const tiles = CSMPlanner.tilesForTrimester(intakeKey, trimester, plan);
+        if (!tiles.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty-slot';
+          empty.title = 'Nothing offered this trimester';
+          grid.appendChild(empty);
+        } else {
+          tiles.forEach((t) => {
+            const tile = makeTile(t.course.name, t.course.category, false);
+            tile.classList.add('option', 'tile-compact');
+            tile.title = t.course.name + ' — 18 credits — click to add';
+            tile.addEventListener('click', () => {
+              plan.mc[trimester - 1] = t.id;
+              render();
+            });
+            grid.appendChild(tile);
+          });
+        }
+      }
+
+      td.appendChild(grid);
+      finishTriCell(td, trimester, ayGroups);
+      return td;
+    }
+
+    function buildCareerCatalystCell(trimester, ayGroups) {
+      const td = document.createElement('td');
+      td.className = 'cell';
+      const grid = document.createElement('div');
+      grid.className = 'tile-grid';
+      const name = CSMPlanner.componentName('wfe_cc');
+
+      if (CSMPlanner.isOnLeave(plan, trimester)) {
+        td.appendChild(grid);
+        finishTriCell(td, trimester, ayGroups);
+        return td;
+      }
+
+      if (plan.careerCatalystAt === trimester) {
+        const tile = makeTile(name, 'wfe_cc', true);
+        tile.title = name + ' — 20 credits — click to remove';
+        tile.addEventListener('click', () => {
+          plan.careerCatalystAt = null;
+          render();
+        });
+        grid.appendChild(tile);
+      } else if (CSMPlanner.canAssignCareerCatalyst(trimester, plan)) {
+        const tile = makeTile(name, 'wfe_cc', false);
+        tile.classList.add('option');
+        tile.title = name + ' — offered every trimester — click to add';
+        tile.addEventListener('click', () => {
+          plan.careerCatalystAt = trimester;
+          render();
+        });
+        grid.appendChild(tile);
+      }
+
+      td.appendChild(grid);
+      finishTriCell(td, trimester, ayGroups);
+      return td;
+    }
+
+    function buildRiweCell(trimester, ayGroups) {
+      const td = document.createElement('td');
+      td.className = 'cell';
+      const grid = document.createElement('div');
+      grid.className = 'tile-grid';
+      const name = CSMPlanner.componentName('riwe');
+      const slots = CSMPlanner.riweTrimestersForIntake(intakeKey);
+
+      if (!slots.includes(trimester)) {
+        td.appendChild(grid);
+        finishTriCell(td, trimester, ayGroups);
+        return td;
+      }
+
+      if (CSMPlanner.isOnLeave(plan, trimester)) {
+        td.appendChild(grid);
+        finishTriCell(td, trimester, ayGroups);
+        return td;
+      }
+
+      if (CSMPlanner.isRiweActiveTrimester(plan, intakeKey, trimester)) {
+        const tile = makeTile(name, 'riwe', true);
+        tile.title = name + ' — click to remove';
+        tile.addEventListener('click', () => {
+          plan.riweAt = null;
+          render();
+        });
+        grid.appendChild(tile);
+      } else if (CSMPlanner.canAssignRiwe(trimester, plan)) {
+        const tile = makeTile(name, 'riwe', false);
+        tile.classList.add('option');
+        tile.title = name + ' — Year 2 — click to schedule';
+        tile.addEventListener('click', () => {
+          plan.riweAt = trimester;
+          render();
+        });
+        grid.appendChild(tile);
+      }
+
+      td.appendChild(grid);
+      finishTriCell(td, trimester, ayGroups);
+      return td;
+    }
+
+    function buildCapstoneRow(intake, maxT, ayGroups) {
+      const tr = document.createElement('tr');
+      tr.className = 'capstone-row';
+      const label = CSMPlanner.componentName('capstone');
+      tr.innerHTML = `<td class="row-label">${CSMPlanner.rowLabelText(label)}</td>`;
+
+      const capTs = intake.capstoneTrimesters.filter((t) => t <= maxT);
+      const firstCap = capTs[0];
+      const lastCap = capTs[capTs.length - 1];
+
+      let t = 1;
+      while (t <= maxT) {
+        if (t === firstCap && capTs.length > 0) {
+          const td = document.createElement('td');
+          td.className = 'cell capstone-span-cell';
+          td.colSpan = capTs.length * 2 - 1;
+          if (CSMPlanner.canShowCapstoneOption(plan, t)) {
+            const grid = document.createElement('div');
+            grid.className = 'tile-grid capstone-span-grid';
+            const tile = makeTile(label, 'capstone', plan.capstone);
+            tile.classList.add('capstone-span');
+            tile.title = label + ' — Year 3 (3 trimesters) — click to toggle';
+            tile.addEventListener('click', () => {
+              plan.capstone = !plan.capstone;
+              render();
+            });
+            if (!plan.capstone) tile.classList.add('option');
+            grid.appendChild(tile);
+            td.appendChild(grid);
+          }
+          finishTriCell(td, t, ayGroups);
+          tr.appendChild(td);
+          if (lastCap < maxT) tr.appendChild(makeBreakBodyCell());
+          t = lastCap + 1;
+        } else {
+          const td = document.createElement('td');
+          td.className = 'cell';
+          finishTriCell(td, t, ayGroups);
+          tr.appendChild(td);
+          if (t < maxT) tr.appendChild(makeBreakBodyCell());
+          t++;
+        }
+      }
+      return tr;
+    }
+
+    function buildComponentRow(label, planKey, trimesters, maxT, kind, ayGroups) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="row-label">${CSMPlanner.rowLabelText(label)}</td>`;
+      appendTriColumns(tr, maxT, (t) => {
+        const td = document.createElement('td');
+        td.className = 'cell';
+        if (trimesters.includes(t)) {
+          if (!(kind === 'capstone' && !CSMPlanner.canStartCapstone(t))) {
+            const grid = document.createElement('div');
+            grid.className = 'tile-grid';
+            const tile = makeTile(label, kind, plan[planKey]);
+            tile.title = label + ' — click to toggle';
+            tile.addEventListener('click', () => {
+              plan[planKey] = !plan[planKey];
+              render();
+            });
+            if (!plan[planKey]) tile.classList.add('option');
+            grid.appendChild(tile);
+            td.appendChild(grid);
+          }
+        }
+        finishTriCell(td, t, ayGroups);
+        return td;
+      });
+      return tr;
+    }
+
+    function makeTile(label, kind, selected) {
+      const el = document.createElement('div');
+      el.className = 'tile ' + kind + (selected ? ' selected' : '');
+      el.textContent = CSMPlanner.formatTileLabel(label);
+      return el;
+    }
+
+    function renderCatalog() {
+      const selected = new Set(plan.mc.filter(Boolean));
+      const hasCc = plan.careerCatalystAt != null;
+      const hasRiwe = plan.riweAt != null;
+      const groups = CSMPlanner.coursesGrouped();
+      const ccName = CSMPlanner.componentName('wfe_cc');
+      const riweName = CSMPlanner.componentName('riwe');
+      const capName = CSMPlanner.componentName('capstone');
+
+      const byMonth = { Sep: [], Jan: [], May: [] };
+      groups.stackable.forEach((c) => byMonth[c.intakeMonth].push(c));
+      const foundationByMonth = { Sep: [], Jan: [], May: [] };
+      groups.foundation.forEach((c) => foundationByMonth[c.intakeMonth].push(c));
+
+      function cardCourse(c) {
+        const sel = selected.has(c.id);
+        const title = CSMPlanner.formatTileLabel(c.name);
+        return `<div class="catalog-card ${c.category}${sel ? ' selected' : ''}" title="${c.name}">
+          <div class="catalog-card-title">${title}</div>
+          <div class="catalog-card-meta">18 credits</div>
+        </div>`;
+      }
+
+      function cardComponent(label, kind, on, meta) {
+        const title = CSMPlanner.formatTileLabel(label);
+        return `<div class="catalog-card ${kind}${on ? ' selected' : ''}" title="${label}">
+          <div class="catalog-card-title">${title}</div>
+          <div class="catalog-card-meta">${meta}</div>
+        </div>`;
+      }
+
+      function intakeColumn(monthKey, title) {
+        const parts = [];
+        const foundations = foundationByMonth[monthKey];
+        const stackables = byMonth[monthKey];
+        if (foundations.length) {
+          parts.push('<div class="catalog-section-label foundation-tag">Foundation</div>');
+          parts.push(foundations.map(cardCourse).join(''));
+        }
+        if (stackables.length) {
+          parts.push('<div class="catalog-section-label">Stackable</div>');
+          parts.push(stackables.map(cardCourse).join(''));
+        }
+        const body = parts.length ? parts.join('') : '<div class="catalog-card-meta">—</div>';
+        return `<div class="catalog-column">
+          <div class="catalog-col-head">${title}</div>
+          <div class="catalog-pills">${body}</div>
+        </div>`;
+      }
+
+      const otherColumn = `<div class="catalog-column">
+        <div class="catalog-col-head">Essentials and Capstone</div>
+        <div class="catalog-pills">
+          <div class="catalog-section-label">Workforce Essentials</div>
+          ${cardComponent(ccName, 'wfe_cc', hasCc, 'Every trimester · 20 cr')}
+          ${cardComponent(riweName, 'riwe', hasRiwe, 'Programme Year 2')}
+          <div class="catalog-section-label">Capstone</div>
+          ${cardComponent(capName, 'capstone', plan.capstone, 'Programme Year 3 · 16 cr')}
+        </div>
+      </div>`;
+
+      const html = `
+        <div class="catalog-intro">
+          <h2>Micro-credential catalog</h2>
+          <div class="catalog-view-toggle" role="group" aria-label="Catalog highlight">
+            <button type="button" class="seg-available${catalogView === 'available' ? ' active' : ''}" data-view="available">Available</button>
+            <button type="button" class="seg-selected${catalogView === 'selected' ? ' active' : ''}" data-view="selected">Selected</button>
+          </div>
+        </div>
+        <div class="catalog-matrix catalog-view-${catalogView}">
+          ${intakeColumn('Sep', 'September')}
+          ${intakeColumn('Jan', 'January')}
+          ${intakeColumn('May', 'May')}
+          ${otherColumn}
+        </div>
+        <div class="catalog-legend">
+          <span><span class="swatch" style="background:var(--foundation)"></span>Foundation</span>
+          <span><span class="swatch" style="background:var(--stackable)"></span>Stackable</span>
+          <span><span class="swatch" style="background:var(--wfe)"></span>Career Catalyst</span>
+          <span><span class="swatch" style="background:var(--riwe)"></span>Industry Work Experience</span>
+          <span><span class="swatch" style="background:var(--capstone)"></span>Capstone Project</span>
+        </div>`;
+
+      document.getElementById('catalog').innerHTML = html;
+      document.querySelectorAll('.catalog-view-toggle button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          catalogView = btn.dataset.view;
+          renderCatalog();
+        });
+      });
+    }
+
+    function renderIssues(analysis) {
+      const ul = document.getElementById('issuesList');
+      if (!analysis.issues.length) {
+        ul.innerHTML = '<li>No issues — plan looks good.</li>';
+      } else {
+        ul.innerHTML = analysis.issues.map((i) => `<li class="${i.type}">${i.msg}</li>`).join('');
+      }
+    }
+
+    init().catch((e) => {
+      document.body.insertAdjacentHTML(
+        'afterbegin',
+        `<div style="margin:1rem;padding:1rem;background:#fde8ec;color:#b42318;border-radius:8px;font-weight:600">Error: ${e.message}</div>`
+      );
+    });
+  </script>
+</body>
+</html>
