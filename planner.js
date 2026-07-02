@@ -3,6 +3,8 @@
   'use strict';
 
   let DATA = null;
+  let REGISTRY = null;
+  let ACTIVE_PROGRAM_ID = null;
   const EMPTY = '';
 
   const MONTHS_FULL = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -84,15 +86,27 @@
     };
   }
 
-  const AY_PALETTES = [
+  const AY_PALETTES_LIGHT = [
     { bg: '#dce6ef', text: '#1e3348', accent: '#3d6282' },
     { bg: '#dcebe3', text: '#1e3d30', accent: '#3d7a5c' },
     { bg: '#e4dce8', text: '#342a42', accent: '#5c4a72' },
   ];
 
+  const AY_PALETTES_DARK = [
+    { bg: '#2a3f54', text: '#c5ddf5', accent: '#7eb8f5' },
+    { bg: '#254538', text: '#c0ecd8', accent: '#58d9a0' },
+    { bg: '#352d48', text: '#d8cce8', accent: '#b8a0f0' },
+  ];
+
+  function isDarkTheme() {
+    return typeof document !== 'undefined'
+      && document.documentElement.getAttribute('data-theme') === 'dark';
+  }
+
   function ayPalette(ayStartYear) {
-    const i = ((ayStartYear - 2024) % AY_PALETTES.length + AY_PALETTES.length) % AY_PALETTES.length;
-    return AY_PALETTES[i];
+    const palettes = isDarkTheme() ? AY_PALETTES_DARK : AY_PALETTES_LIGHT;
+    const i = ((ayStartYear - 2024) % palettes.length + palettes.length) % palettes.length;
+    return palettes[i];
   }
 
   function colsForTriRange(fromTri, toTri, maxT) {
@@ -168,6 +182,48 @@
     return c ? c.name : kind;
   }
 
+  function hasFeature(feature) {
+    if (!DATA || !DATA.features) return true;
+    return DATA.features[feature] !== false;
+  }
+
+  function normalizeRegistry(raw) {
+    if (raw && raw.programs) return raw;
+    return {
+      institution: raw.institution,
+      defaultProgramId: raw.id || 'applied-computing',
+      programs: { [raw.id || 'applied-computing']: raw },
+    };
+  }
+
+  function applyProgram(programId) {
+    if (!REGISTRY) throw new Error('Programme registry not loaded.');
+    const program = REGISTRY.programs[programId];
+    if (!program) throw new Error(`Unknown programme: ${programId}`);
+    ACTIVE_PROGRAM_ID = programId;
+    DATA = program;
+    return DATA;
+  }
+
+  function listPrograms() {
+    if (!REGISTRY) return [];
+    return Object.entries(REGISTRY.programs)
+      .map(([id, program]) => ({
+        id,
+        degreeTitle: program.degreeTitle || program.title,
+        order: program.order || 0,
+      }))
+      .sort((a, b) => a.order - b.order || a.degreeTitle.localeCompare(b.degreeTitle));
+  }
+
+  function getActiveProgramId() {
+    return ACTIVE_PROGRAM_ID;
+  }
+
+  function getRegistry() {
+    return REGISTRY;
+  }
+
   function isFoundation(course) {
     return course && course.category === 'foundation';
   }
@@ -190,6 +246,57 @@
     };
   }
 
+  function wrapLabelLines(name, maxLines, targetLen) {
+    const words = name.split(' ');
+    if (words.length <= 1) return name;
+    const lines = [];
+    let current = '';
+    for (const w of words) {
+      const next = current ? `${current} ${w}` : w;
+      if (next.length <= targetLen || !current) {
+        current = next;
+      } else {
+        lines.push(current);
+        current = w;
+        if (lines.length >= maxLines - 1) break;
+      }
+    }
+    if (current) {
+      if (lines.length >= maxLines) {
+        lines[maxLines - 1] = `${lines[maxLines - 1]} ${current}`.trim();
+      } else {
+        lines.push(current);
+      }
+    }
+    return lines.slice(0, maxLines).join('\n');
+  }
+
+  function formatCatalogRefLabel(name) {
+    if (!name) return '';
+    if (name === 'Advanced Generative Text Artificial Intelligence') {
+      return 'Advanced\nGenerative Text\nArtificial Intelligence';
+    }
+    if (name === 'Deep Learning Forecasting with Time Series Analysis') {
+      return 'Deep Learning\nForecasting with\nTime Series Analysis';
+    }
+    if (name.length <= 24) return name;
+    if (name.includes(' & ')) {
+      const idx = name.indexOf(' & ');
+      const before = name.slice(0, idx).trim();
+      const after = name.slice(idx + 3).trim();
+      if (before.length > 16 && after.length <= 14) {
+        const words = before.split(' ');
+        if (words.length >= 2) {
+          const mid = Math.ceil(words.length / 2);
+          return `${words.slice(0, mid).join(' ')}\n${words.slice(mid).join(' ')} & ${after}`;
+        }
+      }
+      if (after.length > 18) return wrapLabelLines(name, 3, 20);
+      return `${before} &\n${after}`;
+    }
+    return wrapLabelLines(name, 3, 20);
+  }
+
   function formatTileLabel(name) {
     if (!name) return '';
     if (name === 'Advanced Generative Text Artificial Intelligence') {
@@ -207,8 +314,14 @@
   }
 
   function hasBothFoundations(plan) {
-    const ids = new Set(plan.mc.filter(Boolean));
-    return ids.has('dlc') && ids.has('ethical');
+    const required = Object.values(DATA.foundationSlots || {});
+    if (!required.length) return false;
+    const scheduledNames = new Set();
+    plan.mc.forEach((id) => {
+      const c = courseById(id);
+      if (c) scheduledNames.add(c.name);
+    });
+    return required.every((name) => scheduledNames.has(name));
   }
 
   function hasCareerCatalystBefore(plan, trimester) {
@@ -252,6 +365,7 @@
   }
 
   function canAssignCareerCatalyst(trimester, plan) {
+    if (!hasFeature('wfeCc')) return false;
     if (isOnLeave(plan, trimester)) return false;
     if (plan.careerCatalystAt != null && plan.careerCatalystAt !== trimester) return false;
     if (plan.mc[trimester - 1]) return false;
@@ -298,22 +412,35 @@
     return canOfferRiwe(trimester) && meetsRiwePrereq(plan, trimester);
   }
 
-  function canAssignRiwe(trimester, plan) {
+  function canAssignRiwe(trimester, plan, intakeKey) {
+    if (!hasFeature('riwe')) return false;
     if (isOnLeave(plan, trimester)) return false;
-    if (!canOfferRiwe(trimester)) return false;
+    if (!riweStartTrimesters(intakeKey).includes(trimester)) return false;
     if (!meetsRiwePrereq(plan, trimester)) return false;
     if (plan.riweAt != null && plan.riweAt !== trimester) return false;
     return true;
   }
 
+  function riweStartTrimesters(intakeKey) {
+    return DATA.intakes[intakeKey].wfeRiweTrimesters;
+  }
+
+  function riweCellTrimesters(plan, intakeKey) {
+    const starts = riweStartTrimesters(intakeKey);
+    const span = riweSpanTrimesters(plan.riweAt, intakeKey);
+    return new Set([...starts, ...span]);
+  }
+
   function riweSpanTrimesters(riweAt, intakeKey) {
     if (riweAt == null) return [];
-    const duration = DATA.prerequisites.wfeRiwe.durationTrimesters;
-    const slots = new Set(DATA.intakes[intakeKey].wfeRiweTrimesters);
-    const span = [];
-    for (let i = 0; i < duration; i++) {
-      const t = riweAt + i;
-      if (slots.has(t)) span.push(t);
+    const maxDuration = DATA.prerequisites.wfeRiwe.durationTrimesters;
+    const latestStart = riweStartTrimesters(intakeKey).slice(-1)[0];
+    const span = [riweAt];
+    if (riweAt < latestStart) {
+      for (let i = 1; i < maxDuration; i++) {
+        const t = riweAt + i;
+        if (canOfferRiwe(t)) span.push(t);
+      }
     }
     return span;
   }
@@ -324,10 +451,10 @@
 
   function firstRiweOfferTrimester(plan, intakeKey) {
     if (plan.riweAt != null) return null;
-    const slots = DATA.intakes[intakeKey].wfeRiweTrimesters;
+    const slots = riweStartTrimesters(intakeKey);
     for (let i = 0; i < slots.length; i++) {
       const t = slots[i];
-      if (canAssignRiwe(t, plan)) return t;
+      if (canAssignRiwe(t, plan, intakeKey)) return t;
     }
     return null;
   }
@@ -343,9 +470,14 @@
     return canStartCapstone(trimester) && meetsCapstonePrereq(plan, trimester);
   }
 
+  function capstoneTrimestersFor(intakeKey, maxTrimester) {
+    return DATA.intakes[intakeKey].capstoneTrimesters.filter((t) => t <= maxTrimester);
+  }
+
   function cumulativeCredits(plan, intakeKey, throughTrimester) {
     let total = 0;
     let ccCounted = false;
+    let riweCounted = false;
     let capCounted = false;
 
     for (let t = 1; t <= throughTrimester; t++) {
@@ -357,6 +489,10 @@
       if (plan.careerCatalystAt === t && !ccCounted) {
         total += DATA.wfeCcCredits;
         ccCounted = true;
+      }
+      if (plan.riweAt === t && !riweCounted) {
+        total += DATA.riweCredits;
+        riweCounted = true;
       }
 
       const intake = DATA.intakes[intakeKey];
@@ -403,6 +539,7 @@
     let foundation = 0;
     let stackable = 0;
     let wfeCc = plan.careerCatalystAt != null ? DATA.wfeCcCredits : 0;
+    let riwe = plan.riweAt != null ? DATA.riweCredits : 0;
     let capstone = plan.capstone ? DATA.capstoneCredits : 0;
 
     plan.mc.forEach((sel) => {
@@ -414,7 +551,7 @@
       else stackable += c.credits;
     });
 
-    return { mc, foundation, stackable, wfeCc, capstone, total: mc + wfeCc + capstone };
+    return { mc, foundation, stackable, wfeCc, riwe, capstone, total: mc + wfeCc + riwe + capstone };
   }
 
   function isCourseOfferedInTrimester(intakeKey, trimester, courseId) {
@@ -470,12 +607,14 @@
       else counts.stackable++;
     });
 
-    if (plan.careerCatalystAt != null) {
-      if (isOnLeave(plan, plan.careerCatalystAt)) {
-        issues.push({ type: 'error', msg: `${ccName} cannot be scheduled on a leave trimester.` });
+    if (hasFeature('wfeCc')) {
+      if (plan.careerCatalystAt != null) {
+        if (isOnLeave(plan, plan.careerCatalystAt)) {
+          issues.push({ type: 'error', msg: `${ccName} cannot be scheduled on a leave trimester.` });
+        }
+      } else {
+        issues.push({ type: 'warn', msg: `${ccName} not yet scheduled.` });
       }
-    } else {
-      issues.push({ type: 'warn', msg: `${ccName} not yet scheduled.` });
     }
 
     const leaveCount = (plan.leave || []).filter(Boolean).length;
@@ -483,20 +622,33 @@
       issues.push({ type: 'info', msg: `${leaveCount} leave trimester(s) marked — extend your timeline if needed.` });
     }
 
+    const foundationLabel = (DATA.catalogLabels && DATA.catalogLabels.foundation) || 'foundation';
+
     if (counts.foundation < DATA.foundationCount) {
       issues.push({
         type: 'warn',
-        msg: `Need ${DATA.foundationCount} foundation micro-credentials (have ${counts.foundation}).`,
+        msg: `Need ${DATA.foundationCount} ${foundationLabel.toLowerCase()} micro-credentials (have ${counts.foundation}).`,
       });
     }
     if (counts.foundation > DATA.foundationCount) {
-      issues.push({ type: 'error', msg: `Too many foundation micro-credentials (max ${DATA.foundationCount}).` });
-    }
-    if (counts.foundation > 0 && (!taken.dlc || !taken.ethical)) {
       issues.push({
-        type: 'warn',
-        msg: 'Foundation must include Digital Logic & Computing and Ethical Computing & Data Analytics.',
+        type: 'error',
+        msg: `Too many ${foundationLabel.toLowerCase()} micro-credentials (max ${DATA.foundationCount}).`,
       });
+    }
+    const foundationRequired = Object.values(DATA.foundationSlots || {});
+    if (foundationRequired.length && counts.foundation > 0) {
+      const scheduledNames = new Set(
+        plan.mc.filter(Boolean).map((id) => courseById(id)?.name).filter(Boolean)
+      );
+      const missing = foundationRequired.filter((name) => !scheduledNames.has(name));
+      if (missing.length) {
+        const label = DATA.catalogLabels?.foundation || 'Foundation';
+        issues.push({
+          type: 'warn',
+          msg: `${label} must include ${foundationRequired.join(' and ')}.`,
+        });
+      }
     }
 
     if (counts.stackable < DATA.stackableCount) {
@@ -512,33 +664,45 @@
       issues.push({ type: 'error', msg: `Maximum ${DATA.mcCount} micro-credentials allowed.` });
     }
 
-    if (plan.riweAt == null) {
-      issues.push({ type: 'warn', msg: `${riweName} not marked (Year 2 only).` });
-    } else {
-      if (!canOfferRiwe(plan.riweAt)) {
-        issues.push({ type: 'error', msg: `${riweName} must be scheduled in Year 2.` });
-      }
-      if (!meetsRiwePrereq(plan, plan.riweAt)) {
-        issues.push({
-          type: 'error',
-          msg: `${riweName} (from Tri ${plan.riweAt}): prerequisite not met (${DATA.prerequisites.wfeRiwe.description}).`,
-        });
-      }
-      if (isOnLeave(plan, plan.riweAt)) {
-        issues.push({
-          type: 'error',
-          msg: `${riweName} cannot be scheduled on a leave trimester.`,
-        });
+    if (hasFeature('riwe')) {
+      if (plan.riweAt == null) {
+        issues.push({ type: 'warn', msg: `${riweName} not marked (Year 2 only).` });
+      } else {
+        if (!canOfferRiwe(plan.riweAt)) {
+          issues.push({ type: 'error', msg: `${riweName} must be scheduled in Year 2.` });
+        }
+        if (!riweStartTrimesters(intakeKey).includes(plan.riweAt)) {
+          issues.push({
+            type: 'error',
+            msg: `${riweName} must start in trimester 1 or 2 of Year 2 (latest: trimester 2 of Year 2).`,
+          });
+        }
+        if (!meetsRiwePrereq(plan, plan.riweAt)) {
+          issues.push({
+            type: 'error',
+            msg: `${riweName} (from Tri ${plan.riweAt}): prerequisite not met (${DATA.prerequisites.wfeRiwe.description}).`,
+          });
+        }
+        if (isOnLeave(plan, plan.riweAt)) {
+          issues.push({
+            type: 'error',
+            msg: `${riweName} cannot be scheduled on a leave trimester.`,
+          });
+        }
       }
     }
 
-    if (!plan.capstone) {
-      issues.push({ type: 'warn', msg: `${componentName('capstone')} not marked (Year 3 only).` });
-    } else {
+    const capYear = DATA.constraints.capstoneMinYear || 3;
+    if (hasFeature('capstone') && !plan.capstone) {
+      issues.push({
+        type: 'warn',
+        msg: `${componentName('capstone')} not marked (Year ${capYear}+ only).`,
+      });
+    } else if (hasFeature('capstone') && plan.capstone) {
       if (!canStartCapstone(capTs[0])) {
         issues.push({
           type: 'error',
-          msg: `${componentName('capstone')} can only start in Year 3 (trimesters ${capTs.join(', ')}).`,
+          msg: `${componentName('capstone')} can only start in Year ${capYear}+ (trimesters ${capTs.join(', ')}).`,
         });
       }
       if (!meetsCapstonePrereq(plan, capTs[0])) {
@@ -553,7 +717,7 @@
     if (breakdown.total < DATA.totalCredits) {
       issues.push({
         type: 'warn',
-        msg: `Credits: ${breakdown.total}/${DATA.totalCredits} (${riweName} has no separate credit in this planner).`,
+        msg: `Credits: ${breakdown.total}/${DATA.totalCredits}.`,
       });
     }
     if (breakdown.total > DATA.totalCredits) {
@@ -564,9 +728,9 @@
     const ready =
       errors.length === 0 &&
       counts.mc === DATA.mcCount &&
-      plan.careerCatalystAt != null &&
-      plan.riweAt != null &&
-      plan.capstone &&
+      (!hasFeature('wfeCc') || plan.careerCatalystAt != null) &&
+      (!hasFeature('riwe') || plan.riweAt != null) &&
+      (!hasFeature('capstone') || plan.capstone) &&
       breakdown.total === DATA.totalCredits;
 
     return { counts, breakdown, issues, ready };
@@ -606,7 +770,17 @@
       }
     });
 
-    return { mc, careerCatalystAt, riweAt: intake.wfeRiweTrimesters[0], capstone: true, leave: new Array(DATA.maxTotalTrimesters).fill(false) };
+    const riweAt =
+      hasFeature('riwe') && intake.wfeRiweTrimesters && intake.wfeRiweTrimesters.length
+        ? intake.wfeRiweTrimesters[0]
+        : null;
+    return {
+      mc,
+      careerCatalystAt: hasFeature('wfeCc') ? careerCatalystAt : null,
+      riweAt,
+      capstone: hasFeature('capstone'),
+      leave: new Array(DATA.maxTotalTrimesters).fill(false),
+    };
   }
 
   function countMcScheduled(plan) {
@@ -700,13 +874,19 @@
 
     assignMicroCredentials(intakeKey, plan, used);
 
-    const ccTri = findCareerCatalystTrimester(intakeKey, plan, used);
-    if (ccTri != null) plan.careerCatalystAt = ccTri;
+    if (hasFeature('wfeCc')) {
+      const ccTri = findCareerCatalystTrimester(intakeKey, plan, used);
+      if (ccTri != null) plan.careerCatalystAt = ccTri;
+    }
 
-    const riweTri = firstRiweOfferTrimester(plan, intakeKey);
-    if (riweTri != null) plan.riweAt = riweTri;
+    if (hasFeature('riwe')) {
+      const riweTri = firstRiweOfferTrimester(plan, intakeKey);
+      if (riweTri != null) plan.riweAt = riweTri;
+    }
 
-    plan.capstone = intake.capstoneTrimesters.some((t) => canShowCapstoneOption(plan, t));
+    if (hasFeature('capstone')) {
+      plan.capstone = intake.capstoneTrimesters.some((t) => canShowCapstoneOption(plan, t));
+    }
 
     return plan;
   }
@@ -726,34 +906,49 @@
   }
 
   function riweTrimestersForIntake(intakeKey) {
-    return DATA.intakes[intakeKey].wfeRiweTrimesters.filter((t) => canOfferRiwe(t));
+    return riweStartTrimesters(intakeKey);
   }
 
-  async function loadData() {
-    if (DATA) return DATA;
-    try {
-      const res = await fetch('data.json');
-      if (res.ok) {
-        DATA = await res.json();
-        return DATA;
+  async function loadData(programId) {
+    if (!REGISTRY) {
+      let raw = null;
+      try {
+        const res = await fetch('data.json');
+        if (res.ok) raw = await res.json();
+      } catch (_) {
+        /* file:// */
       }
-    } catch (_) {
-      /* file:// */
+      if (!raw && global.__CSM_PROGRAMME_DATA__) raw = global.__CSM_PROGRAMME_DATA__;
+      if (!raw) throw new Error('Could not load programme data.');
+      REGISTRY = normalizeRegistry(raw);
     }
-    if (global.__CSM_PROGRAMME_DATA__) {
-      DATA = global.__CSM_PROGRAMME_DATA__;
-      return DATA;
-    }
-    throw new Error('Could not load programme data.');
+    const id = programId || ACTIVE_PROGRAM_ID || REGISTRY.defaultProgramId;
+    return applyProgram(id);
   }
 
   function setData(d) {
-    DATA = d;
+    if (d.programs) {
+      REGISTRY = d;
+      applyProgram(REGISTRY.defaultProgramId);
+      return;
+    }
+    REGISTRY = normalizeRegistry(d);
+    applyProgram(REGISTRY.defaultProgramId);
+  }
+
+  function getData() {
+    return DATA;
   }
 
   global.CSMPlanner = {
     loadData,
     setData,
+    getData,
+    applyProgram,
+    listPrograms,
+    getActiveProgramId,
+    getRegistry,
+    hasFeature,
     monthForTrimester,
     yearForTrimester,
     triInYear,
@@ -789,6 +984,9 @@
     canOfferRiwe,
     canShowRiweOption,
     canAssignRiwe,
+    riweStartTrimesters,
+    riweCellTrimesters,
+    capstoneTrimestersFor,
     riweSpanTrimesters,
     isRiweActiveTrimester,
     firstRiweOfferTrimester,
@@ -799,6 +997,7 @@
     riweTrimestersForIntake,
     isOnLeave,
     formatTileLabel,
+    formatCatalogRefLabel,
     EMPTY,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

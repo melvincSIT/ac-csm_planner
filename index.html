@@ -3,7 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CSM Candidature Planner | SIT Applied Computing</title>
+  <title>CSM Candidature Planner | SIT CSM Pathways</title>
+  <script>
+    (function () {
+      var t = localStorage.getItem('csm-planner-theme');
+      document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+      if (localStorage.getItem('csm-planner-fullscreen') === 'true') {
+        document.documentElement.setAttribute('data-fullscreen', 'true');
+      }
+    })();
+  </script>
   <style>
     :root {
       --bg: #eef1f5;
@@ -29,9 +38,86 @@
       --warn-bg: #fff8e6;
       --err: #b42318;
       --shadow: 0 2px 10px rgba(26, 35, 50, 0.07);
+      --surface-muted: #fafbfc;
+      --surface-hover: #f4f6f9;
+      --input-bg: #fff;
+      --progress-track: #e2e8f0;
+      --seg-track: linear-gradient(180deg, #eef2f7 0%, #e4e9f0 100%);
+      --seg-hover: rgba(255, 255, 255, 0.55);
+      --mc-stat-bg: #e8edf4;
+      --mc-stat-text: #2d4156;
+      --leave-tile-bg: #f4f6f8;
+      --leave-tile-border: #b8c2cc;
+      --leave-tile-selected: #e8ecf0;
+      --empty-slot-bg: #fafbfc;
+      --row-label-bg: #f7f9fc;
+      --cohort-btn-bg: linear-gradient(165deg, #fafcfd 0%, #e4edf5 100%);
+      --ext-header-bg: #fff8ee;
+      --ext-header-text: #9a6700;
+      --ext-col-accent: #c9a86a;
+      --icon-fg: var(--text);
+      --break-label: #8a96a3;
+      --break-tab-bg: var(--bg);
+      --break-tab-border: #c5ced8;
+      --break-tab-text: #6b7a88;
+      --ay-header-divider: rgba(0, 0, 0, 0.08);
+      --break-col-w: 26px;
       --tile-sm: 36px;
       --tile-min-h: 58px;
       --tile-max-w: 120px;
+    }
+    [data-theme="dark"] {
+      --bg: #121820;
+      --card: #1c2636;
+      --text: #e8edf4;
+      --muted: #a8b6c6;
+      --border: #45586e;
+      --shadow: 0 2px 14px rgba(0, 0, 0, 0.42);
+      --foundation: #7eb8f5;
+      --foundation-bg: #1e3352;
+      --stackable: #58d9a0;
+      --stackable-bg: #1a3d2e;
+      --stackable-muted: #2d5c48;
+      --wfe: #ff8a98;
+      --wfe-bg: #402028;
+      --riwe: #f5b04a;
+      --riwe-bg: #3d2d14;
+      --capstone: #b8a0f0;
+      --capstone-bg: #2e2548;
+      --ok: #4cd49a;
+      --ok-bg: #163528;
+      --warn: #e8c46a;
+      --warn-bg: #3d3210;
+      --err: #f07068;
+      --surface-muted: #243040;
+      --surface-hover: #2e3c50;
+      --input-bg: #243040;
+      --progress-track: #2e3c50;
+      --seg-track: linear-gradient(180deg, #2e3c50 0%, #243040 100%);
+      --seg-hover: rgba(255, 255, 255, 0.1);
+      --mc-stat-bg: #2e3c50;
+      --mc-stat-text: #d0dce8;
+      --leave-tile-bg: #283444;
+      --leave-tile-border: #556878;
+      --leave-tile-selected: #344456;
+      --empty-slot-bg: #1e2836;
+      --row-label-bg: #1a2432;
+      --cohort-btn-bg: linear-gradient(165deg, #2a384c 0%, #1c2636 100%);
+      --ext-header-bg: #3d3218;
+      --ext-header-text: #f0d080;
+      --ext-col-accent: #d4a84a;
+      --icon-fg: #dce6f2;
+      --break-label: #8a9cb0;
+      --break-tab-bg: #1e2836;
+      --break-tab-border: #4a5e72;
+      --break-tab-text: #a8b8c8;
+      --ay-header-divider: rgba(255, 255, 255, 0.1);
+    }
+    [data-theme="dark"] select.ctrl-control {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%23a8b8c8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    }
+    [data-theme="dark"] .ctrl-control {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%23a8b8c8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
     }
     * { box-sizing: border-box; }
     body {
@@ -42,11 +128,43 @@
       line-height: 1.4;
     }
     header {
-      background: linear-gradient(135deg, #1a2332 0%, #2c3e50 100%);
+      position: relative;
+      overflow: hidden;
+      background: #1a2332;
       color: #fff;
-      padding: 1.1rem 0;
+      padding: calc(1.1rem * 0.95) 0;
+      isolation: isolate;
+    }
+    .header-banner {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background-color: #1a2332;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      transition: opacity 0.4s ease;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .header-banner { transition: none; }
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: linear-gradient(
+        102deg,
+        rgba(18, 26, 38, 0.94) 0%,
+        rgba(22, 32, 46, 0.86) 34%,
+        rgba(26, 35, 50, 0.52) 62%,
+        rgba(26, 35, 50, 0.22) 100%
+      );
     }
     .header-inner {
+      position: relative;
+      z-index: 2;
       max-width: 1440px;
       margin: 0 auto;
       padding: 0 1.25rem;
@@ -60,40 +178,277 @@
     .header-brand {
       min-width: 0;
       flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.12rem;
     }
-    header h1 { margin: 0 0 0.2rem; font-size: 1.3rem; font-weight: 600; }
-    header p { margin: 0; opacity: 0.85; font-size: 0.88rem; }
-    .header-clear {
-      flex: 0 0 auto;
-      height: 2.1rem;
-      padding: 0 0.85rem;
-      font-size: 0.82rem;
+    header h1 {
+      margin: 0;
+      font-size: 1.28rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1.25;
+      text-shadow: 0 1px 14px rgba(0, 0, 0, 0.45);
+    }
+    .header-programme-row {
+      position: relative;
+      display: block;
+      width: fit-content;
+      max-width: min(44rem, 100%);
+      margin: 0.1rem 0 0.14rem;
+    }
+    .program-select-display {
+      display: block;
+      font-size: 0.86rem;
+      font-weight: 400;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.82);
+      text-shadow: 0 1px 10px rgba(0, 0, 0, 0.4);
+      padding: 0.12rem 1.35rem 0.12rem 0;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M3 4.5L6 7.5L9 4.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.1rem center;
+    }
+    .header-programme-row:hover .program-select-display,
+    .header-programme-row:focus-within .program-select-display {
+      color: rgba(255, 255, 255, 0.92);
+    }
+    .header-programme-row:focus-within .program-select-display {
+      color: #fff;
+    }
+    select.program-select {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+      margin: 0;
+      padding: 0;
+      cursor: pointer;
+      opacity: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      background: transparent;
+      color: transparent;
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+    select.program-select:focus-visible {
+      outline: none;
+    }
+    select.program-select option {
+      color: #1a1a1a;
+      background: #fff;
+    }
+    .header-sit-brand {
+      margin: 0;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.055em;
+      text-transform: uppercase;
+      color: #e8a0ab;
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      text-shadow: 0 1px 10px rgba(0, 0, 0, 0.42);
+    }
+    [data-theme="dark"] .header-sit-brand {
+      color: #f0f0f0;
+      text-shadow:
+        0 0 10px rgba(255, 255, 255, 0.42),
+        0 0 22px rgba(255, 255, 255, 0.18);
+    }
+    :root {
+      --header-tool-w: calc(3 * 2.15rem + 2 * 0.4rem);
+    }
+    .header-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0;
+      flex-shrink: 0;
+    }
+    .header-tool-stack {
+      width: var(--header-tool-w);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.4rem;
+    }
+    .header-stack-theme {
+      width: 100%;
+      display: flex;
+    }
+    .header-stack-theme button {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+    .header-export-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.4rem;
+      width: 100%;
+    }
+    .header-toolbar-row {
+      display: contents;
+    }
+    .header-actions .mini-seg-toggle {
+      border-color: rgba(255, 255, 255, 0.35);
+      background: rgba(0, 0, 0, 0.22);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
+    }
+    .header-actions .mini-seg-toggle button {
+      height: 1.05rem;
+      font-size: 0.62rem;
+      min-width: 2.35rem;
+      padding: 0 0.35rem;
+      color: rgba(255, 255, 255, 0.82);
+    }
+    .header-actions .mini-seg-toggle button:hover:not(.active) {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+    }
+    button.header-icon-btn {
+      width: 2.15rem;
+      height: 2.15rem;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 6px;
+      cursor: pointer;
+      flex-shrink: 0;
+      font-weight: 400;
+      filter: none;
+    }
+    button.header-icon-btn svg {
+      width: 1.05rem;
+      height: 1.05rem;
+      fill: currentColor;
+      display: block;
+    }
+    button.header-icon-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      filter: none;
+    }
+    button.header-fullscreen-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.42rem;
+      width: 100%;
+      min-width: 0;
+      height: 2rem;
+      padding: 0 0.75rem;
+      font-size: 0.78rem;
       font-weight: 600;
       background: rgba(255, 255, 255, 0.1);
       color: #fff;
       border: 1px solid rgba(255, 255, 255, 0.35);
       border-radius: 6px;
+      cursor: pointer;
       white-space: nowrap;
+      filter: none;
     }
-    .header-clear:hover {
+    button.header-fullscreen-btn:hover {
       background: rgba(255, 255, 255, 0.18);
       filter: none;
     }
-    main { max-width: 1440px; margin: 0 auto; padding: 1rem 1.25rem 2rem; }
+    button.header-fullscreen-btn svg {
+      width: 0.95rem;
+      height: 0.95rem;
+      flex-shrink: 0;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    html[data-fullscreen="true"] .header-fullscreen-btn {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.55);
+    }
+    html[data-fullscreen="true"] .header-fullscreen-btn .fs-icon-enter {
+      display: none;
+    }
+    html[data-fullscreen="true"] .header-fullscreen-btn .fs-icon-exit {
+      display: block;
+    }
+    .header-fullscreen-btn .fs-icon-exit {
+      display: none;
+    }
+    .requirement-clear {
+      position: static;
+      transform: none;
+      height: 2rem;
+      padding: 0 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      white-space: nowrap;
+      filter: none;
+    }
+    .requirement-clear:hover {
+      background: var(--surface-hover);
+      filter: none;
+    }
+    .catalog-intro-head {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      margin: 0 0 0.4rem;
+    }
+    .catalog-intro-head .catalog-title {
+      grid-column: 2;
+    }
+    .catalog-intro-head .requirement-clear {
+      grid-column: 3;
+      justify-self: end;
+      flex-shrink: 0;
+      height: auto;
+      line-height: 1.2;
+      padding: 0.1rem 0.65rem;
+    }
+    .requirement-credit-head {
+      margin: 0 0 0.65rem;
+      text-align: center;
+      scroll-snap-align: start;
+      scroll-snap-stop: normal;
+    }
+    .requirement-credit-head .section-title {
+      margin: 0;
+    }
+    html {
+      scroll-snap-type: y proximity;
+    }
+    main {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 1.25rem 2rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
 
     .controls {
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      position: relative;
       gap: 1rem 1.5rem;
       flex-wrap: wrap;
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1rem 9.5rem 1rem 1.15rem;
-      margin-bottom: 0.85rem;
-      box-shadow: var(--shadow);
+      border-radius: 0;
+      padding: 1rem 1.15rem;
+      margin-bottom: 0;
     }
     .controls-primary {
       display: flex;
@@ -101,28 +456,26 @@
       justify-content: center;
       gap: 1rem 1.25rem;
       flex-wrap: wrap;
+      width: 100%;
     }
     .controls .ctrl-field {
       flex: 0 1 auto;
       min-width: 0;
+      align-items: center;
     }
-    .ctrl-cohort {
-      flex: 0 0 auto;
-      min-width: 15.5rem;
-      width: 15.5rem;
-    }
+    .ctrl-cohort,
     .ctrl-duration {
       flex: 0 0 auto;
-      min-width: 12rem;
-      width: 14rem;
-      max-width: 28rem;
+      width: 18rem;
+      min-width: 14rem;
+      max-width: 100%;
     }
     .ctrl-control {
       display: block;
       width: 100%;
       height: 2.4rem;
       margin: 0;
-      padding: 0 0.65rem;
+      padding: 0 2.25rem;
       border: 1px solid var(--border);
       border-radius: 6px;
       font-size: 0.88rem;
@@ -130,57 +483,120 @@
       line-height: calc(2.4rem - 2px);
       box-sizing: border-box;
       color: var(--text);
-      text-align: left;
+      text-align: center;
+      background-color: var(--input-bg);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%235c6b7a' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.7rem center;
+      background-size: 0.65rem auto;
     }
     .controls button.ctrl-control {
       display: flex;
       align-items: center;
+      justify-content: center;
       line-height: 1.2;
       cursor: pointer;
       filter: none;
     }
     select.ctrl-control {
-      padding-right: 2rem;
       appearance: none;
       -webkit-appearance: none;
-      background-color: #fff;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%235c6b7a' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 0.65rem center;
-      background-size: 0.65rem auto;
+      text-align-last: center;
       cursor: pointer;
+    }
+    .cohort-wheel-display {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      min-width: 0;
+      width: 100%;
+      padding: 0;
+      overflow: hidden;
+    }
+    .mini-seg-toggle {
+      display: inline-flex;
+      padding: 2px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--seg-track);
+      box-shadow: inset 0 1px 2px rgba(26, 35, 50, 0.04);
+      width: 100%;
+    }
+    [data-theme="dark"] .mini-seg-toggle {
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.22);
+    }
+    [data-theme="dark"] .mini-seg-toggle button:not(.active) {
+      color: #b8c6d6;
+    }
+    .mini-seg-toggle button {
+      flex: 1 1 0;
+      height: 0.925rem;
+      min-width: 0;
+      padding: 0 0.2rem;
+      font-size: 0.58rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      box-shadow: none;
+      filter: none;
+      line-height: 1;
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    }
+    .mini-seg-toggle button.active {
+      color: #fff;
+      transform: translateY(-0.5px);
+    }
+    .catalog-view-toggle button.active[data-view="available"],
+    .theme-toggle button.active[data-theme-set="light"] {
+      background: linear-gradient(145deg, #1f7a55 0%, #2a9b6a 100%);
+      box-shadow: 0 2px 6px rgba(31, 122, 85, 0.35), 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+    }
+    .catalog-view-toggle button.active[data-view="selected"],
+    .theme-toggle button.active[data-theme-set="dark"] {
+      background: linear-gradient(145deg, #3d6db3 0%, #5a8fd4 100%);
+      box-shadow: 0 2px 6px rgba(61, 109, 179, 0.35), 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+    }
+    .mini-seg-toggle button:hover:not(.active) {
+      color: var(--text);
+      filter: none;
+      background: var(--seg-hover);
     }
     .export-actions {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 0.45rem;
       flex-shrink: 0;
-      position: absolute;
-      right: 1.15rem;
-      bottom: 1rem;
+      width: 100%;
     }
-    .icon-btn {
+    button.icon-btn {
       width: 2.4rem;
       height: 2.4rem;
       padding: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: #fff;
-      color: var(--text);
+      background: var(--input-bg);
+      color: var(--icon-fg);
       border: 1px solid var(--border);
       border-radius: 6px;
       cursor: pointer;
       flex-shrink: 0;
+      font-weight: 400;
     }
-    .icon-btn svg {
+    button.icon-btn svg {
       width: 1.15rem;
       height: 1.15rem;
       fill: currentColor;
       display: block;
     }
-    .icon-btn:hover {
-      background: #f4f6f9;
+    button.icon-btn:hover {
+      background: var(--surface-hover);
+      color: var(--text);
       filter: none;
     }
     .ctrl-field {
@@ -196,17 +612,145 @@
       text-transform: uppercase;
       letter-spacing: 0.03em;
       line-height: 1.2;
+      text-align: center;
+      width: 100%;
     }
-    .cohort-inputs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.65rem;
-      margin-bottom: 0.85rem;
+    .cohort-dialog {
+      border: none;
+      border-radius: 14px;
+      padding: 0;
+      max-width: 22rem;
+      width: calc(100% - 2rem);
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 16px 48px rgba(26, 35, 50, 0.22);
     }
-    .cohort-dialog .help-dialog-inner p {
-      margin: 0 0 0.75rem;
-      font-size: 0.82rem;
+    [data-theme="dark"] .cohort-dialog {
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+    }
+    .cohort-dialog::backdrop {
+      background: rgba(26, 35, 50, 0.35);
+      backdrop-filter: blur(3px);
+    }
+    [data-theme="dark"] .cohort-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.55);
+    }
+    .cohort-dialog-card {
+      padding: 1.2rem 1.3rem 1.1rem;
+    }
+    .cohort-dialog-card h3 {
+      margin: 0 0 0.45rem;
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: center;
+    }
+    .cohort-dialog-note {
+      margin: 0 0 1rem;
+      font-size: 0.8rem;
       color: var(--muted);
+      line-height: 1.45;
+      text-align: center;
+    }
+    .cohort-wheels-row {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .cohort-wheel-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+    .wheel-col-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      text-align: center;
+    }
+    .wheel-picker {
+      position: relative;
+      height: 7.5rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-muted);
+      overflow: hidden;
+    }
+    .wheel-picker::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 2.5rem;
+      border-top: 1px solid color-mix(in srgb, var(--foundation) 35%, var(--border));
+      border-bottom: 1px solid color-mix(in srgb, var(--foundation) 35%, var(--border));
+      background: color-mix(in srgb, var(--foundation) 7%, transparent);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .wheel-list {
+      height: 100%;
+      overflow-y: auto;
+      scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .wheel-list::-webkit-scrollbar { display: none; }
+    .wheel-pad {
+      height: calc((100% - 2.5rem) / 2);
+      flex-shrink: 0;
+    }
+    .wheel-item {
+      height: 2.5rem;
+      scroll-snap-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.15s ease, transform 0.15s ease;
+    }
+    .wheel-item-active {
+      color: var(--foundation);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+    .cohort-dialog-done {
+      width: 100%;
+      height: 2.35rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+    }
+    .wheel-segment {
+      display: inline-block;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+    .wheel-segment.wheel-year {
+      color: var(--foundation);
+      font-weight: 700;
+    }
+    @keyframes wheelSlideUp {
+      from { transform: translateY(55%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes wheelSlideDown {
+      from { transform: translateY(-55%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .wheel-segment.wheel-anim-up {
+      animation: wheelSlideUp 0.18s ease-out;
+    }
+    .wheel-segment.wheel-anim-down {
+      animation: wheelSlideDown 0.18s ease-out;
     }
     .ctrl-value {
       display: flex;
@@ -223,12 +767,12 @@
       line-height: 1.15;
     }
     select:not(.ctrl-control),
-    button:not(.ctrl-control):not(.icon-btn):not(.header-clear):not(.toolbar-btn):not(.seg-available):not(.seg-selected) {
+    button:not(.ctrl-control):not(.icon-btn):not(.header-icon-btn):not(.header-fullscreen-btn):not(.requirement-clear):not(.toolbar-btn):not(.seg-available):not(.seg-selected):not(.seg-theme) {
       font: inherit;
       padding: 0.45rem 0.65rem;
       border-radius: 6px;
       border: 1px solid var(--border);
-      background: #fff;
+      background: var(--input-bg);
     }
     select:not(.ctrl-control) {
       height: 2.4rem;
@@ -246,8 +790,25 @@
       white-space: nowrap;
       font-size: 0.88rem;
     }
-    button.secondary { background: #fff; color: var(--text); }
+    button.secondary { background: var(--input-bg); color: var(--text); }
     button:hover { filter: brightness(1.04); }
+    button.ctrl-control {
+      background-color: var(--input-bg);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%235c6b7a' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.65rem center;
+      background-size: 0.65rem auto;
+      color: var(--text);
+      border-color: var(--border);
+      filter: none;
+    }
+    button.ctrl-control:hover {
+      filter: none;
+      background-color: var(--surface-hover);
+    }
+    [data-theme="dark"] button.ctrl-control {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%23a8b8c8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    }
 
     /* Credit tracker (integrated in timeline) */
     .timeline-title {
@@ -256,10 +817,40 @@
       font-weight: 700;
       text-align: center;
     }
-    .timeline-credit {
+    .section-title {
+      margin: 0 0 0.35rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-align: center;
+    }
+    .section-lead {
+      margin: 0 0 0.85rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.45;
+      max-width: 42rem;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .timeline-schedule-title {
+      margin-top: 2em;
+    }
+    .requirement-block {
       margin-bottom: 1rem;
-      padding-bottom: 1rem;
+      padding-bottom: 0.85rem;
       border-bottom: 1px solid var(--border);
+    }
+    .requirement-block--catalog {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .timeline-credit {
+      margin-bottom: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      border-bottom: none;
     }
     .credit-toolbar {
       display: flex;
@@ -301,10 +892,20 @@
       right: -0.4rem;
       width: 2.2rem;
       height: 2.2rem;
-      color: var(--ok);
-      filter: drop-shadow(0 2px 5px rgba(13, 122, 78, 0.28));
+      color: #141414;
+      filter:
+        drop-shadow(0 0 0 1px rgba(255, 255, 255, 0.92))
+        drop-shadow(0 2px 3px rgba(0, 0, 0, 0.22))
+        drop-shadow(0 5px 10px rgba(0, 0, 0, 0.18));
       pointer-events: none;
       transform-origin: center bottom;
+    }
+    [data-theme="dark"] .grad-cap {
+      color: #101010;
+      filter:
+        drop-shadow(0 0 0 1px rgba(255, 255, 255, 0.42))
+        drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55))
+        drop-shadow(0 0 10px rgba(255, 255, 255, 0.1));
     }
     .grad-cap-icon {
       width: 100%;
@@ -338,7 +939,7 @@
     }
     .progress-bar {
       height: 8px;
-      background: #e2e8f0;
+      background: var(--progress-track);
       border-radius: 5px;
       overflow: hidden;
       margin-top: 0.5rem;
@@ -368,7 +969,7 @@
       padding: 0.35rem 0.18rem 0.3rem;
       border-radius: 8px;
       border: 1px solid var(--border);
-      background: #fafbfc;
+      background: var(--surface-muted);
       flex-shrink: 0;
       box-sizing: border-box;
     }
@@ -421,10 +1022,12 @@
     .stat-stackable .stat-name { color: var(--stackable); }
     .stat-wfe .stat-badge { background: var(--wfe-bg); color: var(--wfe); }
     .stat-wfe .stat-name { color: var(--wfe); }
+    .stat-riwe .stat-badge { background: var(--riwe-bg); color: var(--riwe); }
+    .stat-riwe .stat-name { color: var(--riwe); }
     .stat-capstone .stat-badge { background: var(--capstone-bg); color: var(--capstone); }
     .stat-capstone .stat-name { color: var(--capstone); }
-    .stat-mc .stat-badge { background: #e8edf4; color: #2d4156; }
-    .stat-mc .stat-name { color: #2d4156; }
+    .stat-mc .stat-badge { background: var(--mc-stat-bg); color: var(--mc-stat-text); }
+    .stat-mc .stat-name { color: var(--mc-stat-text); }
     .credit-toolbar .toolbar-btn {
       display: flex;
       align-items: center;
@@ -446,14 +1049,14 @@
       flex-shrink: 0;
       white-space: normal;
       box-sizing: border-box;
-      background: #fafbfc;
-      color: #2d4156;
+      background: var(--surface-muted);
+      color: var(--mc-stat-text);
       border: 1px solid var(--border);
       cursor: pointer;
       filter: none;
     }
     .credit-toolbar .toolbar-btn:hover {
-      background: #f0f3f7;
+      background: var(--surface-hover);
       border-color: #b8c4d0;
       filter: none;
     }
@@ -469,13 +1072,77 @@
     }
 
     .timeline-wrap {
-      overflow-x: auto;
+      overflow: visible;
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-top: none;
+      border-radius: 0;
       box-shadow: var(--shadow);
       padding: 1rem 1.15rem;
       margin-bottom: 0.85rem;
+    }
+    .timeline-wrap--catalog {
+      margin-bottom: 0;
+      padding-bottom: 1em;
+    }
+    .timeline-wrap--plan {
+      margin-top: 0;
+      padding-top: 2em;
+    }
+    .timeline-table-panel {
+      position: relative;
+      padding-top: 1.45rem;
+    }
+    .timeline-table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+    .timeline-scroll-hints {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1.25rem;
+      z-index: 6;
+      pointer-events: none;
+    }
+    .timeline-scroll-hint {
+      position: absolute;
+      top: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.3rem;
+      height: 1.3rem;
+      border-radius: 999px;
+      color: var(--muted);
+      background: color-mix(in srgb, var(--card) 90%, var(--surface-muted));
+      border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.09);
+      opacity: 0;
+      transition: opacity 0.18s ease;
+    }
+    .timeline-scroll-hint svg {
+      width: 0.78rem;
+      height: 0.78rem;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.25;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .timeline-scroll-hint.left {
+      left: 0.2rem;
+    }
+    .timeline-scroll-hint.right {
+      right: 0.2rem;
+    }
+    .timeline-scroll-hint.is-hidden {
+      opacity: 0;
+    }
+    .timeline-scroll-hints:not([hidden]) .timeline-scroll-hint:not(.is-hidden) {
+      opacity: 0.82;
     }
     .help-dialog {
       border: none;
@@ -484,6 +1151,14 @@
       max-width: 22rem;
       width: calc(100% - 2rem);
       box-shadow: 0 12px 40px rgba(26, 35, 50, 0.18);
+      background: var(--card);
+      color: var(--text);
+    }
+    [data-theme="dark"] .help-dialog {
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+    }
+    [data-theme="dark"] .help-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.55);
     }
     .help-dialog::backdrop {
       background: rgba(26, 35, 50, 0.35);
@@ -562,18 +1237,16 @@
       padding-bottom: 0.32rem;
     }
     .cohort-btn {
-      justify-content: space-between;
-      gap: 0.5rem;
-      border-color: #7a9bb8;
-      background: linear-gradient(165deg, #fafcfd 0%, #e4edf5 100%);
+      justify-content: center;
+      gap: 0;
+      border-color: var(--border);
       cursor: pointer;
       transition: border-color 0.15s;
-      text-align: left;
+      text-align: center;
     }
     .cohort-btn.ctrl-control {
-      background: linear-gradient(165deg, #fafcfd 0%, #e4edf5 100%);
       color: var(--text);
-      border-color: #7a9bb8;
+      border-color: var(--border);
       font-size: 0.88rem;
       font-weight: 600;
     }
@@ -581,35 +1254,15 @@
       border-color: #4a6d8f;
       filter: none;
     }
+    [data-theme="dark"] .cohort-btn.ctrl-control:hover {
+      border-color: #6b8fb0;
+    }
     .cohort-btn:focus-visible {
       outline: 2px solid #4a6d8f;
       outline-offset: 2px;
     }
-    .cohort-display {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      min-width: 0;
-      flex: 1 1 auto;
-      white-space: nowrap;
-    }
-    .cohort-btn .cohort-month,
-    .cohort-btn .cohort-year {
-      font-size: 0.88rem;
-      font-weight: 600;
-      line-height: 1.2;
-    }
-    .cohort-btn .cohort-month { color: #2d4156; }
-    .cohort-btn .cohort-year { color: #3d6282; font-weight: 700; }
-    .cohort-btn .cohort-change {
-      flex-shrink: 0;
-      font-size: 0.62rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      color: #5a7d9e;
-      white-space: nowrap;
-      margin-left: 0.25rem;
+    [data-theme="dark"] .cohort-btn:focus-visible {
+      outline-color: #6b8fb0;
     }
     .timeline th.ay-header {
       font-size: 0.7rem;
@@ -617,13 +1270,13 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
       padding: 0.35rem 0.25rem;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      border-bottom: 1px solid var(--ay-header-divider);
       position: relative;
       overflow: hidden;
     }
     .timeline th.ay-header.ext {
-      background: #fff8ee !important;
-      color: #9a6700 !important;
+      background: var(--ext-header-bg) !important;
+      color: var(--ext-header-text) !important;
     }
     .timeline th.ay-header.fade-start {
       mask-image: linear-gradient(to right, transparent 0%, #000 22%);
@@ -642,7 +1295,7 @@
       padding: 0.3rem 0.2rem 0.12rem;
       vertical-align: middle;
       text-align: center;
-      background: #fff;
+      background: var(--card);
     }
     .timeline th.tri-header .tri-num {
       display: inline-block;
@@ -657,13 +1310,13 @@
       vertical-align: bottom;
       text-align: center;
       border-bottom: 2px solid var(--border);
-      background: #fff;
+      background: var(--card);
     }
     .timeline th.break-col.period-break {
       vertical-align: bottom;
       text-align: center;
       border-bottom: 2px solid var(--border);
-      padding: 0.15rem 1px 0.32rem;
+      padding: 0.15rem 0 0.32rem;
     }
     .period-slot {
       display: flex;
@@ -696,7 +1349,7 @@
       border-radius: 3px;
       text-align: center;
       line-height: 1;
-      background: #f0f3f7;
+      background: color-mix(in srgb, var(--tri-accent, #5a7d9e) 12%, var(--surface-hover));
       border: 1px solid color-mix(in srgb, var(--tri-accent, #5a7d9e) 45%, var(--border));
       color: var(--tri-accent, #2d4156);
       box-sizing: border-box;
@@ -709,17 +1362,17 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      align-items: center;
-      gap: 1px;
+      align-items: stretch;
+      gap: 2px;
       min-height: 1.75rem;
       width: 100%;
     }
     .break-label {
       display: block;
       width: 100%;
-      font-size: 0.38rem;
+      font-size: 0.42rem;
       font-weight: 700;
-      color: #8a96a3;
+      color: var(--break-label);
       line-height: 1;
       letter-spacing: 0.02em;
       text-transform: uppercase;
@@ -728,19 +1381,22 @@
     }
     .break-month-tab {
       width: 100%;
-      font-size: 0.5rem;
-      background: #eef1f5;
-      border-color: #c5ced8;
-      color: #6b7a88;
+      min-width: 0;
+      flex: 1 1 auto;
+      font-size: 0.52rem;
+      padding: 0 1px;
+      background: var(--break-tab-bg);
+      border-color: var(--break-tab-border);
+      color: var(--break-tab-text);
       text-align: center;
       justify-content: center;
     }
     .timeline th.break-col,
     .timeline td.break-cell {
-      width: 20px;
-      min-width: 20px;
-      max-width: 20px;
-      padding: 0 1px;
+      width: var(--break-col-w);
+      min-width: var(--break-col-w);
+      max-width: var(--break-col-w);
+      padding: 0;
       vertical-align: middle;
       background: transparent;
       border: none;
@@ -793,9 +1449,12 @@
     }
     .timeline td.col-tint {
       border-top: 2px solid color-mix(in srgb, var(--col-accent, var(--border)) 55%, transparent);
-      background-color: #fff;
+      background-color: var(--card);
     }
-    .timeline th.tri-header.ext .tri-num { color: #8a5c14; }
+    [data-theme="dark"] .timeline td.col-tint {
+      background-color: color-mix(in srgb, var(--col-accent, var(--border)) 7%, var(--card));
+    }
+    .timeline th.tri-header.ext .tri-num { color: var(--ext-header-text); }
     .timeline td.row-label {
       font-weight: 600;
       font-size: 0.76rem;
@@ -825,7 +1484,7 @@
       font-size: 0.85rem;
       padding: 0.35rem;
       border-radius: 6px;
-      background: #f7f9fc;
+      background: var(--row-label-bg);
     }
     .timeline td.cum-cell:empty {
       background: transparent;
@@ -867,8 +1526,8 @@
     .tile.wfe_cc { background: var(--wfe-bg); color: var(--wfe); border-color: var(--wfe); }
     .tile.riwe { background: var(--riwe-bg); color: var(--riwe); border-color: var(--riwe); }
     .tile.capstone { background: var(--capstone-bg); color: var(--capstone); border-color: var(--capstone); }
-    .tile.leave { background: #f4f6f8; color: var(--muted); border-color: #b8c2cc; border-style: dashed; }
-    .tile.leave.selected { background: #e8ecf0; color: var(--text); border-style: solid; }
+    .tile.leave { background: var(--leave-tile-bg); color: var(--muted); border-color: var(--leave-tile-border); border-style: dashed; }
+    .tile.leave.selected { background: var(--leave-tile-selected); color: var(--text); border-style: solid; }
     .tile.leave.compact {
       min-height: 1.65rem;
       padding: 2px 5px;
@@ -897,6 +1556,11 @@
     .leave-row .tile-grid { min-height: 0; align-items: center; }
     .tile.option { opacity: 0.72; border-style: dashed; }
     .tile.option:hover { opacity: 1; }
+    .tile.option.slot-muted {
+      opacity: 0.45;
+      cursor: default;
+      pointer-events: none;
+    }
     .tile.selected {
       opacity: 1;
       box-shadow: 0 0 0 2px var(--text);
@@ -907,7 +1571,7 @@
       min-height: var(--tile-min-h);
       border: 2px dashed var(--border);
       border-radius: 6px;
-      background: #fafbfc;
+      background: var(--surface-muted);
       cursor: default;
     }
     .tile.tile-compact {
@@ -915,113 +1579,133 @@
       font-size: 0.55rem;
     }
 
-    /* Catalog */
+    /* Catalog (inline in requirement section) */
     .catalog {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1rem 1.15rem;
-      margin-bottom: 0.85rem;
-      box-shadow: var(--shadow);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     .catalog-intro {
       display: flex;
       flex-direction: column;
       align-items: center;
-      text-align: center;
-      gap: 0.55rem;
-      margin-bottom: 1.15rem;
-    }
-    .catalog-intro h2 {
+      width: 100%;
       margin: 0;
+    }
+    .catalog-title {
+      margin: 0;
+      min-width: 0;
       font-size: 1.1rem;
+      font-weight: 700;
+      line-height: 1.2;
+      text-align: center;
+    }
+    #catalogMatrix {
+      margin-top: 2em;
     }
     .catalog-view-toggle {
-      display: inline-flex;
-      padding: 4px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: linear-gradient(180deg, #eef2f7 0%, #e4e9f0 100%);
-      box-shadow: inset 0 1px 2px rgba(26, 35, 50, 0.04);
+      width: auto;
+    }
+    .catalog-view-toggle.mini-seg-toggle {
+      padding: 3px;
     }
     .catalog-view-toggle button {
-      height: 2.1rem;
-      min-width: 5.5rem;
-      padding: 0 1rem;
-      font-size: 0.78rem;
-      font-weight: 600;
-      border: none;
-      border-radius: 7px;
-      background: transparent;
-      color: var(--muted);
-      cursor: pointer;
-      box-shadow: none;
-      filter: none;
-      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
-    }
-    .catalog-view-toggle button.active {
-      color: #fff;
-      transform: translateY(-1px);
-    }
-    .catalog-view-toggle button.active[data-view="available"] {
-      background: linear-gradient(145deg, #1f7a55 0%, #2a9b6a 100%);
-      box-shadow: 0 3px 12px rgba(31, 122, 85, 0.4), 0 1px 0 rgba(255, 255, 255, 0.2) inset;
-    }
-    .catalog-view-toggle button.active[data-view="selected"] {
-      background: linear-gradient(145deg, #3d6db3 0%, #5a8fd4 100%);
-      box-shadow: 0 3px 12px rgba(61, 109, 179, 0.4), 0 1px 0 rgba(255, 255, 255, 0.2) inset;
-    }
-    .catalog-view-toggle button:hover:not(.active) {
-      color: var(--text);
-      filter: none;
-      background: rgba(255, 255, 255, 0.55);
+      flex: 0 1 auto;
+      height: 1.2rem;
+      min-width: 3.35rem;
+      padding: 0 0.5rem;
+      font-size: 0.68rem;
     }
     .catalog-matrix {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.65rem 0.85rem;
-      align-items: start;
+      grid-template-columns: repeat(4, var(--catalog-card-w));
+      align-items: stretch;
+      justify-content: center;
+      gap: 0.45rem 0.58rem;
+      width: max-content;
+      max-width: 100%;
+      margin: 0 auto;
+      --catalog-card-w: 11.46rem;
+      --catalog-card-h: 4.38rem;
     }
     .catalog-column {
       display: flex;
       flex-direction: column;
+      width: var(--catalog-card-w);
       min-width: 0;
+      height: 100%;
     }
     .catalog-col-head {
-      font-size: 0.82rem;
+      font-size: 0.84rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
       color: var(--text);
-      margin-bottom: 0.4rem;
-      line-height: 1.25;
+      margin-bottom: 0.28rem;
+      line-height: 1.2;
+      flex-shrink: 0;
     }
     .catalog-pills {
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      flex: 1 1 auto;
+      gap: 0.3rem;
+      min-height: 0;
     }
-    .catalog-card {
+    .catalog-block-top,
+    .catalog-block-bottom {
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
-      padding: 0.48rem 0.5rem 0.42rem;
-      border-radius: 8px;
-      border: 2px solid var(--border);
+      gap: 0.3rem;
+    }
+    .catalog-block-bottom {
+      margin-top: auto;
+    }
+    .catalog-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      width: 100%;
+      min-height: var(--catalog-card-h);
+      height: auto;
+      padding: 0.34rem 0.45rem 1.05rem;
+      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      box-sizing: border-box;
+      overflow: visible;
       transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
     }
     .catalog-card-title {
-      font-size: 0.8rem;
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      font-size: 0.79rem;
       font-weight: 600;
-      line-height: 1.3;
+      line-height: 1.15;
+      text-align: center;
       white-space: pre-line;
-      overflow-wrap: normal;
-      word-break: normal;
+      overflow: visible;
+    }
+    .catalog-card-cr {
+      position: absolute;
+      right: 0.45rem;
+      bottom: 0.28rem;
+      flex: 0 0 auto;
+      font-size: 0.77rem;
+      font-weight: 800;
+      line-height: 1;
+      opacity: 0.9;
+      margin-top: 0;
     }
     .catalog-card-meta {
-      font-size: 0.62rem;
-      font-weight: 500;
-      opacity: 0.9;
+      display: none;
     }
     .catalog-card.foundation { border-color: var(--foundation); background: var(--foundation-bg); color: var(--foundation); }
     .catalog-card.stackable { border-color: var(--stackable); background: var(--stackable-bg); color: var(--stackable); }
@@ -1030,11 +1714,15 @@
     .catalog-card.capstone { border-color: var(--capstone); background: var(--capstone-bg); color: var(--capstone); }
     .catalog-view-available .catalog-card.selected,
     .catalog-view-selected .catalog-card:not(.selected) {
-      background: #f4f6f9;
+      background: var(--surface-muted);
       color: var(--muted);
       border-color: var(--border);
       opacity: 0.58;
       font-weight: 500;
+    }
+    [data-theme="dark"] .catalog-view-available .catalog-card.selected,
+    [data-theme="dark"] .catalog-view-selected .catalog-card:not(.selected) {
+      opacity: 0.78;
     }
     .catalog-view-available .catalog-card:not(.selected),
     .catalog-view-selected .catalog-card.selected {
@@ -1042,40 +1730,24 @@
       font-weight: 700;
     }
     .catalog-section-label {
-      font-size: 0.7rem;
+      font-size: 0.79rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       color: var(--muted);
-      margin: 0.5rem 0 0.35rem;
-      min-height: 0.95rem;
+      margin: 0.36rem 0 0.16rem;
+      min-height: 0;
+      line-height: 1.1;
     }
     .catalog-section-label:first-child {
       margin-top: 0;
     }
+    .catalog-block-top .catalog-section-label:first-child,
+    .catalog-block-bottom .catalog-section-label:first-child {
+      margin-top: 0;
+    }
     .catalog-section-label.foundation-tag {
       color: var(--foundation);
-    }
-    .catalog-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.85rem 1.25rem;
-      justify-content: center;
-      align-items: center;
-      margin-top: 0.85rem;
-      padding-top: 0.85rem;
-      border-top: 1px solid var(--border);
-      font-size: 0.75rem;
-      color: var(--muted);
-      text-align: center;
-    }
-    .swatch {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 3px;
-      margin-right: 4px;
-      vertical-align: middle;
     }
 
     .issues {
@@ -1097,26 +1769,134 @@
       color: var(--muted);
       text-align: center;
     }
+    footer p {
+      margin: 0;
+    }
+    footer .footer-disclaimer {
+      margin-top: 0.5rem;
+      max-width: 36rem;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.45;
+      font-size: 0.72rem;
+    }
     footer a { color: var(--accent); }
+
+    html[data-fullscreen="true"] {
+      font-size: 120%;
+    }
+    html[data-fullscreen="true"] .header-inner,
+    html[data-fullscreen="true"] main {
+      max-width: none;
+      width: 100%;
+    }
+    html[data-fullscreen="true"] header {
+      padding: 0.8rem 0;
+    }
+    html[data-fullscreen="true"] header h1 {
+      font-size: 1.45rem;
+    }
+    html[data-fullscreen="true"] main {
+      padding: 0 1.5rem 1.35rem;
+    }
+    html[data-fullscreen="true"] .controls {
+      padding: 0.95rem 1.35rem;
+    }
+    html[data-fullscreen="true"] .ctrl-cohort,
+    html[data-fullscreen="true"] .ctrl-duration {
+      width: 19rem;
+    }
+    html[data-fullscreen="true"] .catalog-matrix {
+      --catalog-card-w: 13.75rem;
+      --catalog-card-h: 5.25rem;
+      gap: 0.55rem 0.72rem;
+    }
+    html[data-fullscreen="true"] .catalog-card-title {
+      font-size: 0.88rem;
+    }
+    html[data-fullscreen="true"] .catalog-card-cr {
+      font-size: 0.86rem;
+    }
+    html[data-fullscreen="true"] .catalog-col-head,
+    html[data-fullscreen="true"] .catalog-section-label {
+      font-size: 0.88rem;
+    }
+    html[data-fullscreen="true"] {
+      --tile-min-h: 68px;
+      --tile-max-w: 145px;
+      --tile-sm: 44px;
+      --break-col-w: 30px;
+    }
+    html[data-fullscreen="true"] table.timeline {
+      min-width: 1240px;
+      font-size: 0.92rem;
+    }
+    html[data-fullscreen="true"] .timeline td.cell {
+      min-width: 124px;
+      max-width: 148px;
+    }
+    html[data-fullscreen="true"] .timeline th.corner,
+    html[data-fullscreen="true"] .timeline td.row-label {
+      min-width: 82px;
+      max-width: 86px;
+    }
+    html[data-fullscreen="true"] .tile {
+      font-size: 0.72rem;
+    }
+    html[data-fullscreen="true"] .credit-summary {
+      width: 11rem;
+      min-height: 5.5rem;
+    }
+    html[data-fullscreen="true"] .credit-total {
+      font-size: 1.9rem;
+    }
+    html[data-fullscreen="true"] .stat-card {
+      width: 4.85rem;
+      min-height: 5.5rem;
+    }
+    html[data-fullscreen="true"] .stat-badge {
+      width: 42px;
+      height: 42px;
+      font-size: 1.2rem;
+    }
+    html[data-fullscreen="true"] .section-title {
+      font-size: 1.28rem;
+    }
+    html[data-fullscreen="true"] .timeline-wrap {
+      padding: 1.15rem 1.35rem;
+    }
 
     @media (max-width: 900px) {
       .controls { flex-direction: column; align-items: stretch; position: static; padding: 1rem 1.15rem; }
-      .controls-primary { width: 100%; justify-content: stretch; }
-      .ctrl-duration { max-width: none; width: auto; flex: 1 1 auto; }
-      .export-actions { position: static; justify-content: flex-end; margin-top: 0.25rem; }
-      .catalog-matrix { grid-template-columns: 1fr 1fr; }
+      .controls-primary { width: 100%; justify-content: center; }
+      .ctrl-cohort,
+      .ctrl-duration { max-width: none; width: 100%; min-width: 0; flex: 1 1 auto; }
+      .catalog-matrix {
+        grid-template-columns: repeat(2, var(--catalog-card-w));
+        justify-content: center;
+      }
       .credit-toolbar { justify-content: center; }
+      html[data-fullscreen="true"] .controls {
+        padding: 1rem 1.15rem;
+      }
+      .requirement-credit-head .section-title { text-align: center; }
     }
     @media (max-width: 640px) {
-      .header-top { align-items: flex-start; }
-      .header-clear { height: 2rem; padding: 0 0.65rem; font-size: 0.78rem; }
-      .cohort-inputs { grid-template-columns: 1fr; }
+      .header-top { align-items: flex-start; flex-wrap: wrap; }
+      .header-actions { width: 100%; align-items: stretch; }
+      .header-tool-stack { width: 100%; max-width: 14rem; margin-left: auto; }
+      .header-export-row { justify-content: center; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-snap-type: none; }
     }
     @media print {
+      html { scroll-snap-type: none; }
       @page { size: A3 landscape; margin: 6mm; }
-      .header-clear,
+      .header-actions,
       .controls,
       .toolbar-btn,
+      .requirement-clear,
       .help-dialog,
       footer { display: none !important; }
       main { padding: 0; max-width: none; }
@@ -1128,6 +1908,8 @@
         page-break-inside: avoid;
       }
       .timeline-wrap { overflow: visible !important; }
+      .timeline-table-scroll { overflow: visible !important; }
+      .timeline-scroll-hints { display: none !important; }
       table.timeline { min-width: 100%; width: max-content; }
       .timeline th.corner,
       .timeline td.row-label { position: static !important; }
@@ -1142,47 +1924,87 @@
 </head>
 <body>
   <header>
+    <div class="header-banner" id="headerBanner" aria-hidden="true"></div>
     <div class="header-inner">
       <div class="header-top">
         <div class="header-brand">
           <h1>CSM Candidature Planner</h1>
-          <p>Applied Computing Degree (via CSM Pathway) · Singapore Institute of Technology</p>
+          <div class="header-programme-row">
+            <span class="program-select-display" id="programSelectDisplay" aria-hidden="true"></span>
+            <select id="programSelect" class="program-select" aria-label="Degree programme"></select>
+          </div>
+          <p class="header-sit-brand">Singapore Institute of Technology</p>
         </div>
-        <button type="button" class="header-clear" id="clearBtn">Clear all</button>
+        <div class="header-actions">
+          <div class="header-tool-stack">
+            <div class="theme-toggle mini-seg-toggle header-stack-theme" role="group" aria-label="Colour theme">
+              <button type="button" class="seg-theme" data-theme-set="light">Light</button>
+              <button type="button" class="seg-theme" data-theme-set="dark">Dark</button>
+            </div>
+            <div class="header-export-row">
+              <button type="button" class="header-icon-btn" id="printBtn" title="Print plan" aria-label="Print plan">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-1 11H6v-4h12v4zm1-9a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-3-5H8v4h9V5z"/></svg>
+              </button>
+              <button type="button" class="header-icon-btn" id="pdfBtn" title="Save as PDF" aria-label="Save as PDF">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM8 13h2v5H8v-5zm3 0h2a2 2 0 0 1 0 4h-2v-5zm5 0h2v1h-2v1h2v1h-2v2h-2v-5h2z"/></svg>
+              </button>
+              <button type="button" class="header-icon-btn" id="emailBtn" title="Email plan" aria-label="Email plan">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5L4 8V6l8 5 8-5v2z"/></svg>
+              </button>
+            </div>
+            <button type="button" class="header-fullscreen-btn header-stack-fullscreen" id="fullscreenBtn" title="Full screen" aria-label="Full screen" aria-pressed="false">
+              <svg class="fs-icon-enter" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/></svg>
+              <svg class="fs-icon-exit" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 14h6v6M20 10h-6V4M14 20v-6h6M10 4V10H4"/></svg>
+              <span class="fullscreen-label">Full screen</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
+
   <main>
     <section class="controls">
       <div class="controls-primary">
         <div class="ctrl-field ctrl-cohort">
           <span class="ctrl-label">Cohort start</span>
-          <button type="button" class="cohort-btn ctrl-control" id="cohortBtn" aria-haspopup="dialog" aria-label="Change cohort start date">
-            <span class="cohort-display"><span class="cohort-month">—</span><span class="cohort-year"></span></span>
-            <span class="cohort-change">Change ▾</span>
+          <button type="button" class="cohort-btn ctrl-control" id="cohortBtn" aria-haspopup="dialog" aria-label="Choose cohort start date">
+            <span class="cohort-wheel-display">
+              <span class="wheel-segment" id="cohortDisplayMonth">—</span>
+              <span class="wheel-segment wheel-year" id="cohortDisplayYear"></span>
+            </span>
           </button>
         </div>
         <div class="ctrl-field ctrl-duration">
-          <span class="ctrl-label">Programme duration</span>
-          <select id="programmeDuration" class="ctrl-control" aria-label="Programme duration"></select>
+          <span class="ctrl-label">Candidature length</span>
+          <select id="programmeDuration" class="ctrl-control" aria-label="Candidature length in trimesters"></select>
         </div>
-      </div>
-      <div class="export-actions">
-        <button type="button" class="icon-btn" id="printBtn" title="Print plan" aria-label="Print plan">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-1 11H6v-4h12v4zm1-9a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-3-5H8v4h9V5z"/></svg>
-        </button>
-        <button type="button" class="icon-btn" id="pdfBtn" title="Save as PDF" aria-label="Save as PDF">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM8 13h2v5H8v-5zm3 0h2a2 2 0 0 1 0 4h-2v-5zm5 0h2v1h-2v1h2v1h-2v2h-2v-5h2z"/></svg>
-        </button>
-        <button type="button" class="icon-btn" id="emailBtn" title="Email plan" aria-label="Email plan">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5L4 8V6l8 5 8-5v2z"/></svg>
-        </button>
       </div>
     </section>
 
-    <div class="timeline-wrap">
-      <h2 class="timeline-title">Your candidature timeline</h2>
+    <div class="timeline-wrap timeline-wrap--catalog">
+      <div class="requirement-block requirement-block--catalog">
+        <div class="catalog" id="catalog">
+          <div class="catalog-intro">
+            <div class="catalog-intro-head">
+              <h3 class="catalog-title">Micro-Credentials</h3>
+              <button type="button" class="requirement-clear" id="clearBtn">Clear all</button>
+            </div>
+            <div class="catalog-view-toggle mini-seg-toggle" id="catalogViewToggle" role="group" aria-label="Catalog highlight">
+              <button type="button" class="seg-available active" data-view="available">Available</button>
+              <button type="button" class="seg-selected" data-view="selected">Selected</button>
+            </div>
+          </div>
+          <div id="catalogMatrix"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-wrap timeline-wrap--plan">
       <div class="timeline-credit">
+        <div class="requirement-credit-head">
+          <h2 class="section-title">Your candidature requirement</h2>
+        </div>
         <div class="credit-toolbar">
           <div id="creditProgress"></div>
           <div class="credit-stats" id="creditStats"></div>
@@ -1192,32 +2014,59 @@
           </div>
         </div>
       </div>
-      <table class="timeline">
-        <thead id="timelineHead"></thead>
-        <tbody id="timelineBody"></tbody>
-      </table>
+      <h2 class="section-title timeline-schedule-title">Timeline</h2>
+      <p class="section-lead" id="timelineLead">Choose when to study each micro-credential, Career Catalyst, RIWE, and Capstone across trimesters.</p>
+      <div class="timeline-table-panel" id="timelineTablePanel">
+        <div class="timeline-scroll-hints" id="timelineScrollHints" hidden>
+          <span class="timeline-scroll-hint left is-hidden" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></span>
+          <span class="timeline-scroll-hint right is-hidden" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+        </div>
+        <div class="timeline-table-scroll" id="timelineTableScroll">
+          <table class="timeline">
+            <thead id="timelineHead"></thead>
+            <tbody id="timelineBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
-    <dialog id="cohortDialog" class="help-dialog cohort-dialog" aria-labelledby="cohortDialogTitle">
-      <div class="help-dialog-inner">
+    <section class="issues">
+      <h2>Validation</h2>
+      <ul id="issuesList"></ul>
+    </section>
+
+    <footer>
+      <p>Designed by a random Year 3 Student (2026).</p>
+      <p class="footer-disclaimer">This is a prototype for testing and has not been endorsed or facts verified by the relevant parties.<br>Do not rely on this page for any advice.</p>
+    </footer>
+  </main>
+
+  <dialog id="cohortDialog" class="cohort-dialog" aria-labelledby="cohortDialogTitle">
+      <div class="cohort-dialog-card">
         <h3 id="cohortDialogTitle">Cohort start</h3>
-        <p>Choose when your candidature begins. Changing intake month clears your plan.</p>
-        <div class="cohort-inputs">
-          <select id="intakeYear" aria-label="Start year"></select>
-          <select id="intake" aria-label="Start month"></select>
+        <p class="cohort-dialog-note">Scroll the wheels to choose month and year. Changing month clears your plan.</p>
+        <div class="cohort-wheels-row">
+          <div class="cohort-wheel-col">
+            <span class="wheel-col-label">Month</span>
+            <div class="wheel-picker" id="monthWheel"></div>
+          </div>
+          <div class="cohort-wheel-col">
+            <span class="wheel-col-label">Year</span>
+            <div class="wheel-picker" id="yearWheel"></div>
+          </div>
         </div>
-        <button type="button" class="help-dialog-close secondary" id="cohortDialogClose">Done</button>
+        <button type="button" class="cohort-dialog-done secondary" id="cohortDialogClose">Done</button>
       </div>
     </dialog>
 
     <dialog id="planHelpDialog" class="help-dialog" aria-labelledby="planHelpTitle">
       <div class="help-dialog-inner">
         <h3 id="planHelpTitle">How to plan</h3>
-        <p>Click a coloured tile to assign a module to that trimester. Click again to remove it.</p>
-        <ul>
+        <p id="planHelpIntro">Click a coloured tile to assign a module to that trimester. Click again to remove it.</p>
+        <ul id="planHelpList">
           <li><strong>Leave</strong> — bottom row; mark trimesters when you are not studying.</li>
-          <li><strong>Career Catalyst</strong> — available in any trimester, but not in the same trimester as a micro-credential.</li>
-          <li><strong>Industry Work Experience</strong> — programme Year 2 only; available after 3 micro-credentials, or 2 micro-credentials plus Career Catalyst. Once eligible, it stays available in each subsequent Year 2 trimester until selected.</li>
+          <li><strong>Career Catalyst</strong> — 10 credits; available in any trimester, but not in the same trimester as a micro-credential.</li>
+          <li><strong>Industry Work Experience (RIWE)</strong> — 10 credits; programme Year 2 only. Start in trimester 1 or 2 of Year 2 (latest: trimester 2). Can finish in one trimester or across two. Available after 3 micro-credentials, or 2 micro-credentials plus Career Catalyst.</li>
           <li><strong>Capstone</strong> — programme Year 3 only; available after 6 micro-credentials, or 5 micro-credentials plus Career Catalyst.</li>
         </ul>
         <button type="button" class="help-dialog-close secondary" id="planHelpClose">Got it</button>
@@ -1234,36 +2083,221 @@
       </div>
     </dialog>
 
-    <section class="catalog" id="catalog"></section>
-
-    <section class="issues">
-      <h2>Validation</h2>
-      <ul id="issuesList"></ul>
-    </section>
-
-    <footer>
-      Designed by a random Year 3 Student (2026).
-    </footer>
-  </main>
-
   <script src="data-embed.js"></script>
   <script src="planner.js"></script>
   <script>
-    let data, plan, intakeKey, startYear;
+    let data, plan, intakeKey, startYear, programId;
     let creditsWereComplete = false;
     let catalogView = 'available';
+    let programSelectEl = null;
+    let monthWheelApi = null;
+    let yearWheelApi = null;
+
+    const INTAKE_ORDER = ['sep', 'jan', 'may'];
+    const INTAKE_LABELS = { sep: 'September', jan: 'January', may: 'May' };
+    const PROGRAM_KEY = 'csm-planner-program';
+
+    function getYearOptions() {
+      const years = [];
+      const endYear = new Date().getFullYear() + 4;
+      for (let y = 2024; y <= endYear; y++) years.push(y);
+      return years;
+    }
+
+    function defaultStartYear() {
+      return Math.max(2024, new Date().getFullYear());
+    }
+
+    function pulseWheelSegment(el, direction) {
+      if (!el) return;
+      el.classList.remove('wheel-anim-up', 'wheel-anim-down');
+      void el.offsetWidth;
+      el.classList.add(direction > 0 ? 'wheel-anim-down' : 'wheel-anim-up');
+    }
+
+    function setIntakeMonth(nextKey, animDir) {
+      if (!INTAKE_ORDER.includes(nextKey) || nextKey === intakeKey) return;
+      intakeKey = nextKey;
+      plan = CSMPlanner.emptyPlan();
+      creditsWereComplete = false;
+      if (monthWheelApi) monthWheelApi.setValue(nextKey);
+      render();
+      if (animDir) pulseWheelSegment(document.getElementById('cohortDisplayMonth'), animDir);
+    }
+
+    function setStartYear(nextYear, animDir) {
+      const y = parseInt(nextYear, 10);
+      if (!getYearOptions().includes(y) || y === startYear) return;
+      startYear = y;
+      if (yearWheelApi) yearWheelApi.setValue(String(y));
+      render();
+      if (animDir) pulseWheelSegment(document.getElementById('cohortDisplayYear'), animDir);
+    }
+
+    function cycleIntakeMonth(direction) {
+      const idx = INTAKE_ORDER.indexOf(intakeKey);
+      let next = idx + direction;
+      if (next < 0) next = INTAKE_ORDER.length - 1;
+      if (next >= INTAKE_ORDER.length) next = 0;
+      setIntakeMonth(INTAKE_ORDER[next], direction);
+    }
+
+    function cycleStartYear(direction) {
+      const years = getYearOptions();
+      const idx = years.indexOf(startYear);
+      let next = idx + direction;
+      if (next < 0) next = 0;
+      if (next >= years.length) next = years.length - 1;
+      setStartYear(years[next], direction);
+    }
+
+    function buildWheelPicker(container, items, initialValue, onSelect, opts = {}) {
+      container.innerHTML = '';
+      container.classList.add('wheel-picker');
+      const list = document.createElement('div');
+      list.className = 'wheel-list';
+      list.setAttribute('role', 'listbox');
+
+      const itemHeight = opts.itemHeight || null;
+
+      const topPad = document.createElement('div');
+      topPad.className = 'wheel-pad';
+      list.appendChild(topPad);
+
+      const itemEls = [];
+      items.forEach((item) => {
+        const el = document.createElement('div');
+        el.className = 'wheel-item';
+        el.dataset.value = String(item.value);
+        el.textContent = item.label;
+        el.setAttribute('role', 'option');
+        if (itemHeight) el.style.height = itemHeight;
+        list.appendChild(el);
+        itemEls.push(el);
+      });
+
+      const bottomPad = document.createElement('div');
+      bottomPad.className = 'wheel-pad';
+      list.appendChild(bottomPad);
+      container.appendChild(list);
+
+      if (itemHeight) {
+        topPad.style.height = `calc((100% - ${itemHeight}) / 2)`;
+        bottomPad.style.height = `calc((100% - ${itemHeight}) / 2)`;
+      }
+
+      let scrollTimer = null;
+      let selecting = false;
+      let currentValue = String(initialValue);
+
+      function scrollToValue(value, smooth) {
+        const el = itemEls.find((node) => node.dataset.value === String(value));
+        if (!el) return;
+        const offset = el.offsetTop - (list.clientHeight - el.offsetHeight) / 2;
+        list.scrollTo({ top: offset, behavior: smooth ? 'smooth' : 'auto' });
+      }
+
+      function nearestValue() {
+        const center = list.scrollTop + list.clientHeight / 2;
+        let best = null;
+        let bestDist = Infinity;
+        itemEls.forEach((el) => {
+          const elCenter = el.offsetTop + el.offsetHeight / 2;
+          const dist = Math.abs(elCenter - center);
+          if (dist < bestDist) {
+            bestDist = dist;
+            best = el.dataset.value;
+          }
+        });
+        return best;
+      }
+
+      function markActive(value) {
+        itemEls.forEach((el) => {
+          el.classList.toggle('wheel-item-active', el.dataset.value === String(value));
+        });
+      }
+
+      function applySelection(value) {
+        if (value == null) return;
+        markActive(value);
+        if (String(value) === currentValue) return;
+        currentValue = String(value);
+        onSelect(value);
+      }
+
+      function snapSelect() {
+        const val = nearestValue();
+        selecting = true;
+        scrollToValue(val, true);
+        applySelection(val);
+        setTimeout(() => { selecting = false; }, 120);
+      }
+
+      list.addEventListener('scroll', () => {
+        if (selecting) return;
+        const val = nearestValue();
+        markActive(val);
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(snapSelect, 90);
+      });
+
+      list.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        list.scrollTop += e.deltaY;
+      }, { passive: false });
+
+      itemEls.forEach((el) => {
+        el.addEventListener('click', () => {
+          selecting = true;
+          scrollToValue(el.dataset.value, true);
+          applySelection(el.dataset.value);
+          setTimeout(() => { selecting = false; }, 120);
+        });
+      });
+
+      scrollToValue(initialValue, false);
+      markActive(initialValue);
+
+      return {
+        setValue(value) {
+          selecting = true;
+          currentValue = String(value);
+          scrollToValue(value, false);
+          markActive(value);
+          setTimeout(() => { selecting = false; }, 50);
+        },
+      };
+    }
+
+    function initCohortWheels() {
+      const monthItems = INTAKE_ORDER.map((key) => ({
+        value: key,
+        label: INTAKE_LABELS[key] || data.intakes[key].label,
+      }));
+      const yearItems = getYearOptions().map((y) => ({ value: String(y), label: String(y) }));
+
+      monthWheelApi = buildWheelPicker(
+        document.getElementById('monthWheel'),
+        monthItems,
+        intakeKey,
+        (value) => setIntakeMonth(value, 0)
+      );
+      yearWheelApi = buildWheelPicker(
+        document.getElementById('yearWheel'),
+        yearItems,
+        String(startYear),
+        (value) => setStartYear(value, 0)
+      );
+    }
+
+    function syncCohortWheels() {
+      if (monthWheelApi) monthWheelApi.setValue(intakeKey);
+      if (yearWheelApi) yearWheelApi.setValue(String(startYear));
+    }
 
     function populateYearOptions() {
-      const sel = document.getElementById('intakeYear');
-      sel.innerHTML = '';
-      const endYear = new Date().getFullYear() + 4;
-      for (let y = 2024; y <= endYear; y++) {
-        const o = document.createElement('option');
-        o.value = String(y);
-        o.textContent = String(y);
-        sel.appendChild(o);
-      }
-      sel.value = String(Math.max(2024, new Date().getFullYear()));
+      startYear = defaultStartYear();
     }
 
     function ensurePlanShape() {
@@ -1284,13 +2318,14 @@
     }
 
     function formatTotalDuration(extensionTrimesters) {
-      const totalMonths = 36 + extensionTrimesters * 3;
+      const totalTri = data.maxCoreTrimesters + extensionTrimesters;
+      const totalMonths = totalTri * 4;
       const years = Math.floor(totalMonths / 12);
       const months = totalMonths % 12;
       const parts = [];
       if (years > 0) parts.push(`${years} year${years === 1 ? '' : 's'}`);
       if (months > 0) parts.push(`${months} month${months === 1 ? '' : 's'}`);
-      return parts.join(' ');
+      return `${totalTri} trimesters · ${parts.join(' ')}`;
     }
 
     function populateProgrammeDuration() {
@@ -1326,6 +2361,7 @@
           margin: 0;
           padding: 0;
           background: #fff;
+          scroll-snap-type: none;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
@@ -1410,8 +2446,9 @@
         : 'Incomplete or has validation issues';
       return `
         <div class="export-meta">
-          <h1>CSM Candidature Plan</h1>
+          <h1>${escapeHtml(data.degreeTitle || data.title || 'CSM Candidature Plan')}</h1>
           <div class="export-meta-grid">
+            <span><strong>Programme:</strong> ${escapeHtml(data.degreeTitle || data.title)}</span>
             <span><strong>Cohort:</strong> ${escapeHtml(cohort)}</span>
             <span><strong>Duration:</strong> ${escapeHtml(duration)}</span>
             <span><strong>Credits:</strong> ${analysis.breakdown.total} / ${data.totalCredits}</span>
@@ -1425,13 +2462,15 @@
       container.className = 'export-doc';
       container.innerHTML = buildExportMetaHtml();
 
-      const timeline = document.querySelector('.timeline-wrap').cloneNode(true);
-      timeline.querySelectorAll('.toolbar-btn').forEach((el) => el.remove());
-      timeline.querySelectorAll('.tile.option').forEach((el) => el.remove());
-      container.appendChild(timeline);
-
-      const catalog = document.getElementById('catalog').cloneNode(true);
-      container.appendChild(catalog);
+      const timelineWrap = document.createElement('div');
+      timelineWrap.className = 'timeline-wrap';
+      document.querySelectorAll('.timeline-wrap').forEach((part) => {
+        const clone = part.cloneNode(true);
+        clone.querySelectorAll('.toolbar-btn').forEach((el) => el.remove());
+        clone.querySelectorAll('.tile.option').forEach((el) => el.remove());
+        timelineWrap.appendChild(clone);
+      });
+      container.appendChild(timelineWrap);
 
       const issues = document.querySelector('.issues').cloneNode(true);
       container.appendChild(issues);
@@ -1445,7 +2484,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CSM Candidature Plan</title>
+  <title>${escapeHtml(data.degreeTitle || 'CSM Candidature Plan')}</title>
   <style>
 ${getPageStyles()}
 ${exportStyleOverrides()}
@@ -1519,8 +2558,13 @@ ${cloneExportContent()}
           const info = CSMPlanner.selectionLabel(mc);
           parts.push(info.name);
         }
-        if (plan.careerCatalystAt === t) parts.push(CSMPlanner.componentName('wfe_cc'));
-        if (CSMPlanner.isRiweActiveTrimester(plan, intakeKey, t)) {
+        if (plan.careerCatalystAt === t && CSMPlanner.hasFeature('wfeCc')) {
+          parts.push(CSMPlanner.componentName('wfe_cc'));
+        }
+        if (
+          CSMPlanner.hasFeature('riwe') &&
+          CSMPlanner.isRiweActiveTrimester(plan, intakeKey, t)
+        ) {
           parts.push(CSMPlanner.componentName('riwe'));
         }
         if (plan.capstone && data.intakes[intakeKey].capstoneTrimesters.includes(t)) {
@@ -1570,7 +2614,7 @@ ${cloneExportContent()}
       const filename = downloadExportHtml();
       const analysis = CSMPlanner.analyze(plan, intakeKey);
       const cohort = CSMPlanner.cohortLabel(intakeKey, startYear);
-      const subject = encodeURIComponent('CSM Candidature Plan');
+      const subject = encodeURIComponent(`CSM Candidature Plan — ${data.degreeTitle || data.title}`);
       const body = encodeURIComponent(
         'CSM Candidature Plan\n\n' +
           `Cohort: ${cohort}\n` +
@@ -1583,11 +2627,14 @@ ${cloneExportContent()}
       window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }
 
-    function updateCohortBtn() {
+    function updateCohortBtn(monthAnim, yearAnim) {
       const cohort = CSMPlanner.cohortParts(intakeKey, startYear);
-      const btn = document.getElementById('cohortBtn');
-      btn.querySelector('.cohort-month').textContent = cohort.month;
-      btn.querySelector('.cohort-year').textContent = cohort.year;
+      const monthEl = document.getElementById('cohortDisplayMonth');
+      const yearEl = document.getElementById('cohortDisplayYear');
+      monthEl.textContent = cohort.month;
+      yearEl.textContent = cohort.year;
+      if (monthAnim) pulseWheelSegment(monthEl, monthAnim);
+      if (yearAnim) pulseWheelSegment(yearEl, yearAnim);
     }
 
     function toggleLeave(trimester) {
@@ -1604,35 +2651,215 @@ ${cloneExportContent()}
       render();
     }
 
-    async function init() {
-      data = await CSMPlanner.loadData();
+    const THEME_KEY = 'csm-planner-theme';
+    const FULLSCREEN_KEY = 'csm-planner-fullscreen';
 
-      const intakeSel = document.getElementById('intake');
-      const monthNames = { sep: 'September', jan: 'January', may: 'May' };
-      Object.entries(data.intakes).forEach(([k]) => {
-        const o = document.createElement('option');
-        o.value = k;
-        o.textContent = monthNames[k] || data.intakes[k].label;
-        intakeSel.appendChild(o);
+    function isFullscreenLayout() {
+      return document.documentElement.getAttribute('data-fullscreen') === 'true';
+    }
+
+    function updateFullscreenBtn() {
+      const btn = document.getElementById('fullscreenBtn');
+      if (!btn) return;
+      const label = btn.querySelector('.fullscreen-label');
+      const on = isFullscreenLayout();
+      const text = on ? 'Exit full screen' : 'Full screen';
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.title = text;
+      btn.setAttribute('aria-label', text);
+      if (label) label.textContent = text;
+    }
+
+    function setFullscreenLayout(on, persist) {
+      document.documentElement.setAttribute('data-fullscreen', on ? 'true' : 'false');
+      if (persist) {
+        if (on) localStorage.setItem(FULLSCREEN_KEY, 'true');
+        else localStorage.removeItem(FULLSCREEN_KEY);
+      }
+      updateFullscreenBtn();
+    }
+
+    async function enterFullscreen() {
+      setFullscreenLayout(true, true);
+      try {
+        if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        }
+      } catch (_) {
+        /* enlarged layout still applies without browser fullscreen */
+      }
+    }
+
+    async function exitFullscreen() {
+      setFullscreenLayout(false, true);
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          await document.exitFullscreen();
+        }
+      } catch (_) {}
+    }
+
+    async function toggleFullscreen() {
+      if (isFullscreenLayout()) await exitFullscreen();
+      else await enterFullscreen();
+    }
+
+    function updateProgramSelectDisplay() {
+      const display = document.getElementById('programSelectDisplay');
+      if (!display || !programSelectEl) return;
+      const opt = programSelectEl.options[programSelectEl.selectedIndex];
+      display.textContent = opt ? opt.textContent : '';
+    }
+
+    function initProgramSelect() {
+      programSelectEl = document.getElementById('programSelect');
+      if (!programSelectEl) return;
+
+      programSelectEl.innerHTML = CSMPlanner.listPrograms()
+        .map(
+          (p) =>
+            `<option value="${escapeHtml(p.id)}"${p.id === programId ? ' selected' : ''}>${escapeHtml(p.degreeTitle)}</option>`
+        )
+        .join('');
+
+      updateProgramSelectDisplay();
+
+      programSelectEl.addEventListener('change', () => {
+        setProgram(programSelectEl.value);
       });
+    }
 
+    function updateTimelineScrollHints() {
+      const shell = document.getElementById('timelineTableScroll');
+      const hints = document.getElementById('timelineScrollHints');
+      if (!shell || !hints) return;
+
+      const maxT = maxTrimestersVisible();
+      if (maxT <= 9) {
+        hints.hidden = true;
+        return;
+      }
+
+      const overflow = shell.scrollWidth > shell.clientWidth + 2;
+      hints.hidden = !overflow;
+      if (!overflow) return;
+
+      const left = hints.querySelector('.timeline-scroll-hint.left');
+      const right = hints.querySelector('.timeline-scroll-hint.right');
+      if (left) left.classList.toggle('is-hidden', shell.scrollLeft <= 2);
+      if (right) right.classList.toggle('is-hidden', shell.scrollLeft + shell.clientWidth >= shell.scrollWidth - 2);
+    }
+
+    function setProgram(nextId, opts = {}) {
+      if (!nextId || nextId === programId) return;
+      if (!CSMPlanner.getRegistry()?.programs[nextId]) return;
+      programId = nextId;
+      localStorage.setItem(PROGRAM_KEY, programId);
+      CSMPlanner.applyProgram(programId);
+      data = CSMPlanner.getData();
+      plan = CSMPlanner.emptyPlan();
+      creditsWereComplete = false;
+      catalogView = 'available';
+      intakeKey = INTAKE_ORDER.find((k) => data.intakes[k]) || 'sep';
+      populateProgrammeDuration();
+      const durationSel = document.getElementById('programmeDuration');
+      if (durationSel) durationSel.value = '0';
+      if (programSelectEl) programSelectEl.value = programId;
+      updateProgramSelectDisplay();
+      updateProgramCopy();
+      render();
+    }
+
+    function updateProgramBanner() {
+      const banner = document.getElementById('headerBanner');
+      if (!banner) return;
+      const src = data?.bannerImage || '';
+      const position = data?.bannerPosition || 'center';
+      if (!src) {
+        banner.style.backgroundImage = '';
+        return;
+      }
+      banner.style.backgroundImage = `url('${src}')`;
+      banner.style.backgroundPosition = position;
+    }
+
+    function updateProgramCopy() {
+      document.title = `CSM Candidature Planner | ${data.degreeTitle || data.title || 'SIT'}`;
+      updateProgramBanner();
+      const lead = document.getElementById('timelineLead');
+      if (lead && data.timelineLead) lead.textContent = data.timelineLead;
+      const intro = document.getElementById('planHelpIntro');
+      const list = document.getElementById('planHelpList');
+      if (!data.planHelp || !list) return;
+      if (intro) intro.textContent = data.planHelp[0] || '';
+      list.innerHTML = data.planHelp.slice(1).map((line) => {
+        const sep = line.indexOf(' — ');
+        if (sep > 0) {
+          return `<li><strong>${escapeHtml(line.slice(0, sep))}</strong> — ${escapeHtml(line.slice(sep + 3))}</li>`;
+        }
+        return `<li>${escapeHtml(line)}</li>`;
+      }).join('');
+    }
+
+    function initFullscreen() {
+      if (localStorage.getItem(FULLSCREEN_KEY) === 'true') {
+        setFullscreenLayout(true, false);
+      } else {
+        updateFullscreenBtn();
+      }
+      document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+      document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && isFullscreenLayout()) {
+          setFullscreenLayout(false, true);
+        }
+      });
+    }
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem(THEME_KEY, theme);
+      document.querySelectorAll('[data-theme-set]').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.themeSet === theme);
+      });
+      if (data) render();
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem(THEME_KEY);
+      const theme = saved === 'light' ? 'light' : 'dark';
+      applyTheme(theme);
+      document.querySelectorAll('[data-theme-set]').forEach((btn) => {
+        btn.addEventListener('click', () => applyTheme(btn.dataset.themeSet));
+      });
+    }
+
+    function preloadProgramBanners() {
+      const programs = CSMPlanner.getRegistry()?.programs;
+      if (!programs) return;
+      Object.values(programs).forEach((prog) => {
+        if (!prog.bannerImage) return;
+        const img = new Image();
+        img.src = prog.bannerImage;
+      });
+    }
+
+    async function init() {
+      initTheme();
+      initFullscreen();
+      const savedProgram = localStorage.getItem(PROGRAM_KEY);
+      data = await CSMPlanner.loadData(savedProgram);
+      programId = CSMPlanner.getActiveProgramId();
+      preloadProgramBanners();
+
+      intakeKey = INTAKE_ORDER.find((k) => data.intakes[k]) || 'sep';
       populateYearOptions();
       populateProgrammeDuration();
 
-      intakeKey = intakeSel.value;
-      startYear = parseInt(document.getElementById('intakeYear').value, 10);
       plan = CSMPlanner.emptyPlan();
+      initCohortWheels();
+      initProgramSelect();
+      updateProgramCopy();
 
-      intakeSel.addEventListener('change', () => {
-        intakeKey = intakeSel.value;
-        plan = CSMPlanner.emptyPlan();
-        creditsWereComplete = false;
-        render();
-      });
-      document.getElementById('intakeYear').addEventListener('change', () => {
-        startYear = parseInt(document.getElementById('intakeYear').value, 10);
-        render();
-      });
       document.getElementById('programmeDuration').addEventListener('change', () => {
         render();
       });
@@ -1641,6 +2868,12 @@ ${cloneExportContent()}
         creditsWereComplete = false;
         catalogView = 'available';
         render();
+      });
+      document.getElementById('catalogViewToggle').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-view]');
+        if (!btn) return;
+        catalogView = btn.dataset.view;
+        renderCatalog();
       });
       document.getElementById('suggestBtn').addEventListener('click', () => {
         plan = CSMPlanner.suggestPlan(intakeKey);
@@ -1673,11 +2906,29 @@ ${cloneExportContent()}
       });
 
       const cohortDlg = document.getElementById('cohortDialog');
-      document.getElementById('cohortBtn').addEventListener('click', () => cohortDlg.showModal());
+      const cohortBtn = document.getElementById('cohortBtn');
+      cohortBtn.addEventListener('click', () => {
+        syncCohortWheels();
+        cohortDlg.showModal();
+      });
+      cohortBtn.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = cohortBtn.getBoundingClientRect();
+        const relX = (e.clientX - rect.left) / rect.width;
+        const dir = e.deltaY > 0 ? 1 : -1;
+        if (relX < 0.58) cycleIntakeMonth(dir);
+        else cycleStartYear(dir);
+      }, { passive: false });
       document.getElementById('cohortDialogClose').addEventListener('click', () => cohortDlg.close());
       cohortDlg.addEventListener('click', (e) => {
         if (e.target === cohortDlg) cohortDlg.close();
       });
+
+      const timelineTableScroll = document.getElementById('timelineTableScroll');
+      if (timelineTableScroll) {
+        timelineTableScroll.addEventListener('scroll', updateTimelineScrollHints, { passive: true });
+      }
+      window.addEventListener('resize', updateTimelineScrollHints);
 
       render();
     }
@@ -1686,19 +2937,27 @@ ${cloneExportContent()}
       const meta = CSMPlanner.trimesterMeta(intakeKey, startYear, trimester);
       const palette = CSMPlanner.ayPalette(meta.ayStartYear);
       td.classList.add('col-tint');
-      td.style.setProperty('--col-accent', meta.ext ? '#c9a86a' : palette.accent);
+      td.style.setProperty(
+        '--col-accent',
+        meta.ext ? (cssVar('--ext-col-accent') || '#c9a86a') : palette.accent
+      );
+    }
+
+    function isDarkTheme() {
+      return document.documentElement.getAttribute('data-theme') === 'dark';
     }
 
     function decorateTriHeader(th, trimester, ayGroups) {
       const meta = CSMPlanner.trimesterMeta(intakeKey, startYear, trimester);
       const palette = CSMPlanner.ayPalette(meta.ayStartYear);
       const group = CSMPlanner.ayGroupForTrimester(ayGroups, trimester);
+      const dark = isDarkTheme();
 
       if (meta.ext) {
-        th.style.backgroundColor = '#faf8f4';
-        th.style.setProperty('--tri-accent', '#8a5c14');
+        th.style.backgroundColor = cssVar('--ext-header-bg') || '#faf8f4';
+        th.style.setProperty('--tri-accent', cssVar('--ext-header-text') || '#8a5c14');
       } else {
-        th.style.backgroundColor = '#fff';
+        th.style.backgroundColor = dark ? palette.bg : (cssVar('--card') || '#fff');
         th.style.color = palette.text;
         th.style.setProperty('--tri-accent', palette.accent);
       }
@@ -1712,14 +2971,19 @@ ${cloneExportContent()}
     function decoratePeriodHeader(th, trimester, ayGroups) {
       const meta = CSMPlanner.trimesterMeta(intakeKey, startYear, trimester);
       const palette = CSMPlanner.ayPalette(meta.ayStartYear);
+      const dark = isDarkTheme();
 
       if (meta.ext) {
-        th.style.backgroundColor = '#faf8f4';
-        th.style.setProperty('--tri-accent', '#8a5c14');
+        th.style.backgroundColor = cssVar('--ext-header-bg') || '#faf8f4';
+        th.style.setProperty('--tri-accent', cssVar('--ext-header-text') || '#8a5c14');
       } else {
-        th.style.backgroundColor = '#fff';
+        th.style.backgroundColor = dark ? palette.bg : (cssVar('--card') || '#fff');
         th.style.setProperty('--tri-accent', palette.accent);
       }
+    }
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     }
 
     function makeBreakHeader(trimester, rowKind) {
@@ -1754,6 +3018,74 @@ ${cloneExportContent()}
       }
     }
 
+    function shortStatName(name, maxLen) {
+      if (!name) return '—';
+      if (name.length <= maxLen) return name;
+      const words = name.split(' ');
+      if (words.length > 1 && words[0].length <= maxLen) return words[0];
+      return name.slice(0, maxLen - 1) + '…';
+    }
+
+    function buildCreditStatsHtml(bd, analysis) {
+      const cl = data.catalogLabels || {};
+      const foundationTarget = data.foundationCount * data.mcCredits;
+      const stackableTarget = data.stackableCount * data.mcCredits;
+      const cards = [
+        `<div class="stat-card stat-foundation">
+          <div class="stat-count-row">
+            <div class="stat-badge" title="${escapeHtml(cl.foundation || 'Foundation')} credits">${bd.foundation}</div>
+            <span class="stat-denom">/${foundationTarget}</span>
+          </div>
+          <div class="stat-name" title="${escapeHtml(cl.foundation || 'Foundation')}">${escapeHtml(shortStatName(cl.foundation, 8))}</div>
+        </div>`,
+        `<div class="stat-card stat-stackable">
+          <div class="stat-count-row">
+            <div class="stat-badge" title="${escapeHtml(cl.stackable || 'Stackable')} credits">${bd.stackable}</div>
+            <span class="stat-denom">/${stackableTarget}</span>
+          </div>
+          <div class="stat-name" title="${escapeHtml(cl.stackable || 'Stackable')}">${escapeHtml(shortStatName(cl.stackable, 8))}</div>
+        </div>`,
+      ];
+      if (CSMPlanner.hasFeature('wfeCc')) {
+        const ccName = CSMPlanner.componentName('wfe_cc');
+        cards.push(`<div class="stat-card stat-wfe">
+          <div class="stat-count-row">
+            <div class="stat-badge" title="${escapeHtml(ccName)} credits">${bd.wfeCc}</div>
+            <span class="stat-denom">/${data.wfeCcCredits}</span>
+          </div>
+          <div class="stat-name" title="${escapeHtml(ccName)}">${escapeHtml(shortStatName(ccName, 10))}</div>
+        </div>`);
+      }
+      if (CSMPlanner.hasFeature('riwe')) {
+        const riweName = CSMPlanner.componentName('riwe');
+        cards.push(`<div class="stat-card stat-riwe">
+          <div class="stat-count-row">
+            <div class="stat-badge" title="${escapeHtml(riweName)} credits">${bd.riwe}</div>
+            <span class="stat-denom">/${data.riweCredits}</span>
+          </div>
+          <div class="stat-name" title="${escapeHtml(riweName)}">${escapeHtml(shortStatName(riweName, 10))}</div>
+        </div>`);
+      }
+      if (CSMPlanner.hasFeature('capstone')) {
+        const capName = CSMPlanner.componentName('capstone');
+        cards.push(`<div class="stat-card stat-capstone">
+          <div class="stat-count-row">
+            <div class="stat-badge" title="${escapeHtml(capName)} credits">${bd.capstone}</div>
+            <span class="stat-denom">/${data.capstoneCredits}</span>
+          </div>
+          <div class="stat-name" title="${escapeHtml(capName)}">${escapeHtml(shortStatName(capName, 10))}</div>
+        </div>`);
+      }
+      cards.push(`<div class="stat-card stat-mc">
+          <div class="stat-count-row">
+            <div class="stat-badge" title="Micro-Credentials scheduled">${analysis.counts.mc}</div>
+            <span class="stat-denom">/${data.mcCount}</span>
+          </div>
+          <div class="stat-name" title="Micro-Credentials">Micro-Cred.</div>
+        </div>`);
+      return cards.join('');
+    }
+
     function render() {
       ensurePlanShape();
       const maxT = maxTrimestersVisible();
@@ -1780,47 +3112,13 @@ ${cloneExportContent()}
               : ''
           }
         </div>`;
-      document.getElementById('creditStats').innerHTML = `
-        <div class="stat-card stat-foundation">
-          <div class="stat-count-row">
-            <div class="stat-badge" title="Foundation credits">${bd.foundation}</div>
-            <span class="stat-denom">/36</span>
-          </div>
-          <div class="stat-name" title="Foundation">Found.</div>
-        </div>
-        <div class="stat-card stat-stackable">
-          <div class="stat-count-row">
-            <div class="stat-badge" title="Stackable credits">${bd.stackable}</div>
-            <span class="stat-denom">/108</span>
-          </div>
-          <div class="stat-name" title="Stackable">Stack.</div>
-        </div>
-        <div class="stat-card stat-wfe">
-          <div class="stat-count-row">
-            <div class="stat-badge" title="Career Catalyst credits">${bd.wfeCc}</div>
-            <span class="stat-denom">/20</span>
-          </div>
-          <div class="stat-name" title="Career Catalyst">Catalyst</div>
-        </div>
-        <div class="stat-card stat-capstone">
-          <div class="stat-count-row">
-            <div class="stat-badge" title="Capstone credits">${bd.capstone}</div>
-            <span class="stat-denom">/16</span>
-          </div>
-          <div class="stat-name" title="Capstone">Capstone</div>
-        </div>
-        <div class="stat-card stat-mc">
-          <div class="stat-count-row">
-            <div class="stat-badge" title="Micro-Credentials scheduled">${analysis.counts.mc}</div>
-            <span class="stat-denom">/8</span>
-          </div>
-          <div class="stat-name" title="Micro-Credentials">Micro-Cred.</div>
-        </div>`;
+      document.getElementById('creditStats').innerHTML = buildCreditStatsHtml(bd, analysis);
 
       renderTimeline(maxT, intake, analysis);
       renderCatalog();
       renderIssues(analysis);
       updateCohortBtn();
+      updateTimelineScrollHints();
     }
 
     function renderTimeline(maxT, intake, analysis) {
@@ -1852,15 +3150,22 @@ ${cloneExportContent()}
 
       const ccRow = document.createElement('tr');
       ccRow.className = 'cc-row';
-      ccRow.innerHTML = `<td class="row-label">${CSMPlanner.rowLabelText(CSMPlanner.componentName('wfe_cc'))}</td>`;
-      appendTriColumns(ccRow, maxT, (t) => buildCareerCatalystCell(t, ayGroups));
-      body.appendChild(ccRow);
+      if (CSMPlanner.hasFeature('wfeCc')) {
+        ccRow.innerHTML = `<td class="row-label">${CSMPlanner.rowLabelText(CSMPlanner.componentName('wfe_cc'))}</td>`;
+        appendTriColumns(ccRow, maxT, (t) => buildCareerCatalystCell(t, ayGroups));
+        body.appendChild(ccRow);
+      }
 
-      const riweRow = document.createElement('tr');
-      riweRow.innerHTML = `<td class="row-label">${CSMPlanner.rowLabelText(CSMPlanner.componentName('riwe'))}</td>`;
-      appendTriColumns(riweRow, maxT, (t) => buildRiweCell(t, ayGroups));
-      body.appendChild(riweRow);
-      body.appendChild(buildCapstoneRow(intake, maxT, ayGroups));
+      if (CSMPlanner.hasFeature('riwe')) {
+        const riweRow = document.createElement('tr');
+        riweRow.innerHTML = `<td class="row-label">${CSMPlanner.rowLabelText(CSMPlanner.componentName('riwe'))}</td>`;
+        appendTriColumns(riweRow, maxT, (t) => buildRiweCell(t, ayGroups));
+        body.appendChild(riweRow);
+      }
+
+      if (CSMPlanner.hasFeature('capstone')) {
+        body.appendChild(buildCapstoneRow(intake, maxT, ayGroups));
+      }
 
       const leaveRow = document.createElement('tr');
       leaveRow.className = 'leave-row';
@@ -1941,6 +3246,13 @@ ${cloneExportContent()}
       return groups;
     }
 
+    function appendEmptySlot(grid, title) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-slot';
+      empty.title = title;
+      grid.appendChild(empty);
+    }
+
     function buildLeaveCell(trimester, ayGroups) {
       const td = document.createElement('td');
       td.className = 'cell';
@@ -1949,6 +3261,7 @@ ${cloneExportContent()}
       const onLeave = CSMPlanner.isOnLeave(plan, trimester);
       const tile = makeTile(onLeave ? 'On leave' : 'Leave', 'leave', onLeave);
       tile.classList.add('compact');
+      if (!onLeave) tile.classList.add('option');
       tile.title = onLeave
         ? 'On leave this trimester — click to clear'
         : 'Mark this trimester as leave (no modules)';
@@ -1966,20 +3279,14 @@ ${cloneExportContent()}
       grid.className = 'tile-grid';
 
       if (CSMPlanner.isOnLeave(plan, trimester)) {
-        const empty = document.createElement('div');
-        empty.className = 'empty-slot';
-        empty.title = 'On leave — no micro-credential this trimester';
-        grid.appendChild(empty);
+        appendEmptySlot(grid, 'On leave — no micro-credential this trimester');
         td.appendChild(grid);
         finishTriCell(td, trimester, ayGroups);
         return td;
       }
 
       if (plan.careerCatalystAt === trimester) {
-        const empty = document.createElement('div');
-        empty.className = 'empty-slot';
-        empty.title = 'Career Catalyst scheduled this trimester — no micro-credential';
-        grid.appendChild(empty);
+        appendEmptySlot(grid, 'Career Catalyst scheduled this trimester — no micro-credential');
         td.appendChild(grid);
         finishTriCell(td, trimester, ayGroups);
         return td;
@@ -1999,10 +3306,7 @@ ${cloneExportContent()}
       } else if (CSMPlanner.canAssignMc(trimester, plan)) {
         const tiles = CSMPlanner.tilesForTrimester(intakeKey, trimester, plan);
         if (!tiles.length) {
-          const empty = document.createElement('div');
-          empty.className = 'empty-slot';
-          empty.title = 'Nothing offered this trimester';
-          grid.appendChild(empty);
+          appendEmptySlot(grid, 'Nothing offered this trimester');
         } else {
           tiles.forEach((t) => {
             const tile = makeTile(t.course.name, t.course.category, false);
@@ -2015,6 +3319,8 @@ ${cloneExportContent()}
             grid.appendChild(tile);
           });
         }
+      } else {
+        appendEmptySlot(grid, 'Micro-credential slot');
       }
 
       td.appendChild(grid);
@@ -2030,6 +3336,7 @@ ${cloneExportContent()}
       const name = CSMPlanner.componentName('wfe_cc');
 
       if (CSMPlanner.isOnLeave(plan, trimester)) {
+        appendEmptySlot(grid, 'On leave — no Career Catalyst this trimester');
         td.appendChild(grid);
         finishTriCell(td, trimester, ayGroups);
         return td;
@@ -2037,20 +3344,25 @@ ${cloneExportContent()}
 
       if (plan.careerCatalystAt === trimester) {
         const tile = makeTile(name, 'wfe_cc', true);
-        tile.title = name + ' — 20 credits — click to remove';
+        tile.title = name + ' — 10 credits — click to remove';
         tile.addEventListener('click', () => {
           plan.careerCatalystAt = null;
           render();
         });
         grid.appendChild(tile);
-      } else if (CSMPlanner.canAssignCareerCatalyst(trimester, plan)) {
+      } else {
         const tile = makeTile(name, 'wfe_cc', false);
         tile.classList.add('option');
-        tile.title = name + ' — offered every trimester — click to add';
-        tile.addEventListener('click', () => {
-          plan.careerCatalystAt = trimester;
-          render();
-        });
+        if (CSMPlanner.canAssignCareerCatalyst(trimester, plan)) {
+          tile.title = name + ' — 10 credits — click to add';
+          tile.addEventListener('click', () => {
+            plan.careerCatalystAt = trimester;
+            render();
+          });
+        } else {
+          tile.classList.add('slot-muted');
+          tile.title = name + ' — 10 credits — slot (not available this trimester)';
+        }
         grid.appendChild(tile);
       }
 
@@ -2065,15 +3377,16 @@ ${cloneExportContent()}
       const grid = document.createElement('div');
       grid.className = 'tile-grid';
       const name = CSMPlanner.componentName('riwe');
-      const slots = CSMPlanner.riweTrimestersForIntake(intakeKey);
+      const riweCells = CSMPlanner.riweCellTrimesters(plan, intakeKey);
 
-      if (!slots.includes(trimester)) {
+      if (!riweCells.has(trimester)) {
         td.appendChild(grid);
         finishTriCell(td, trimester, ayGroups);
         return td;
       }
 
       if (CSMPlanner.isOnLeave(plan, trimester)) {
+        appendEmptySlot(grid, 'On leave — no RIWE this trimester');
         td.appendChild(grid);
         finishTriCell(td, trimester, ayGroups);
         return td;
@@ -2081,20 +3394,25 @@ ${cloneExportContent()}
 
       if (CSMPlanner.isRiweActiveTrimester(plan, intakeKey, trimester)) {
         const tile = makeTile(name, 'riwe', true);
-        tile.title = name + ' — click to remove';
+        tile.title = name + ' — 10 credits — click to remove';
         tile.addEventListener('click', () => {
           plan.riweAt = null;
           render();
         });
         grid.appendChild(tile);
-      } else if (CSMPlanner.canAssignRiwe(trimester, plan)) {
+      } else if (CSMPlanner.canAssignRiwe(trimester, plan, intakeKey)) {
         const tile = makeTile(name, 'riwe', false);
         tile.classList.add('option');
-        tile.title = name + ' — Year 2 — click to schedule';
+        tile.title = name + ' — 10 credits — Year 2 — click to schedule';
         tile.addEventListener('click', () => {
           plan.riweAt = trimester;
           render();
         });
+        grid.appendChild(tile);
+      } else {
+        const tile = makeTile(name, 'riwe', false);
+        tile.classList.add('option', 'slot-muted');
+        tile.title = name + ' — 10 credits — Year 2 slot';
         grid.appendChild(tile);
       }
 
@@ -2109,7 +3427,7 @@ ${cloneExportContent()}
       const label = CSMPlanner.componentName('capstone');
       tr.innerHTML = `<td class="row-label">${CSMPlanner.rowLabelText(label)}</td>`;
 
-      const capTs = intake.capstoneTrimesters.filter((t) => t <= maxT);
+      const capTs = CSMPlanner.capstoneTrimestersFor(intakeKey, maxT);
       const firstCap = capTs[0];
       const lastCap = capTs[capTs.length - 1];
 
@@ -2119,20 +3437,19 @@ ${cloneExportContent()}
           const td = document.createElement('td');
           td.className = 'cell capstone-span-cell';
           td.colSpan = capTs.length * 2 - 1;
-          if (CSMPlanner.canShowCapstoneOption(plan, t)) {
-            const grid = document.createElement('div');
-            grid.className = 'tile-grid capstone-span-grid';
-            const tile = makeTile(label, 'capstone', plan.capstone);
-            tile.classList.add('capstone-span');
-            tile.title = label + ' — Year 3 (3 trimesters) — click to toggle';
-            tile.addEventListener('click', () => {
-              plan.capstone = !plan.capstone;
-              render();
-            });
-            if (!plan.capstone) tile.classList.add('option');
-            grid.appendChild(tile);
-            td.appendChild(grid);
-          }
+          const grid = document.createElement('div');
+          grid.className = 'tile-grid capstone-span-grid';
+          const tile = makeTile(label, 'capstone', plan.capstone);
+          tile.classList.add('capstone-span');
+          const triLabel = capTs.length === 1 ? '1 trimester' : `${capTs.length} trimesters`;
+          tile.title = label + ` — Year 3 (${triLabel}) — click to toggle`;
+          tile.addEventListener('click', () => {
+            plan.capstone = !plan.capstone;
+            render();
+          });
+          if (!plan.capstone) tile.classList.add('option');
+          grid.appendChild(tile);
+          td.appendChild(grid);
           finishTriCell(td, t, ayGroups);
           tr.appendChild(td);
           if (lastCap < maxT) tr.appendChild(makeBreakBodyCell());
@@ -2140,6 +3457,10 @@ ${cloneExportContent()}
         } else {
           const td = document.createElement('td');
           td.className = 'cell';
+          const grid = document.createElement('div');
+          grid.className = 'tile-grid';
+          appendEmptySlot(grid, '—');
+          td.appendChild(grid);
           finishTriCell(td, t, ayGroups);
           tr.appendChild(td);
           if (t < maxT) tr.appendChild(makeBreakBodyCell());
@@ -2183,11 +3504,23 @@ ${cloneExportContent()}
       return el;
     }
 
+    function updateCatalogViewToggle() {
+      document.querySelectorAll('#catalogViewToggle button').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.view === catalogView);
+      });
+    }
+
     function renderCatalog() {
       const selected = new Set(plan.mc.filter(Boolean));
       const hasCc = plan.careerCatalystAt != null;
       const hasRiwe = plan.riweAt != null;
       const groups = CSMPlanner.coursesGrouped();
+      const labels = data.catalogLabels || {
+        foundation: 'Foundation',
+        stackable: 'Stackable',
+        essentials: 'Essentials',
+        wfeSection: 'WFE',
+      };
       const ccName = CSMPlanner.componentName('wfe_cc');
       const riweName = CSMPlanner.componentName('riwe');
       const capName = CSMPlanner.componentName('capstone');
@@ -2197,82 +3530,97 @@ ${cloneExportContent()}
       const foundationByMonth = { Sep: [], Jan: [], May: [] };
       groups.foundation.forEach((c) => foundationByMonth[c.intakeMonth].push(c));
 
+      function catalogCardTitle(name) {
+        return escapeHtml(CSMPlanner.formatCatalogRefLabel(name));
+      }
+
       function cardCourse(c) {
         const sel = selected.has(c.id);
-        const title = CSMPlanner.formatTileLabel(c.name);
-        return `<div class="catalog-card ${c.category}${sel ? ' selected' : ''}" title="${c.name}">
-          <div class="catalog-card-title">${title}</div>
-          <div class="catalog-card-meta">18 credits</div>
+        return `<div class="catalog-card ${c.category}${sel ? ' selected' : ''}" title="${escapeHtml(c.name)}">
+          <span class="catalog-card-title">${catalogCardTitle(c.name)}</span>
+          <span class="catalog-card-cr">${c.credits}</span>
         </div>`;
       }
 
-      function cardComponent(label, kind, on, meta) {
-        const title = CSMPlanner.formatTileLabel(label);
-        return `<div class="catalog-card ${kind}${on ? ' selected' : ''}" title="${label}">
-          <div class="catalog-card-title">${title}</div>
-          <div class="catalog-card-meta">${meta}</div>
+      function cardComponent(kind, on, credits, fullName) {
+        return `<div class="catalog-card ${kind}${on ? ' selected' : ''}" title="${escapeHtml(fullName)}">
+          <span class="catalog-card-title">${catalogCardTitle(fullName)}</span>
+          <span class="catalog-card-cr">${credits}</span>
         </div>`;
       }
 
       function intakeColumn(monthKey, title) {
-        const parts = [];
         const foundations = foundationByMonth[monthKey];
         const stackables = byMonth[monthKey];
+        let topHtml = '';
+        let bottomHtml = '';
+
         if (foundations.length) {
-          parts.push('<div class="catalog-section-label foundation-tag">Foundation</div>');
-          parts.push(foundations.map(cardCourse).join(''));
+          topHtml =
+            '<div class="catalog-block-top">' +
+            `<div class="catalog-section-label foundation-tag">${escapeHtml(labels.foundation)}</div>` +
+            foundations.map(cardCourse).join('') +
+            '</div>';
         }
         if (stackables.length) {
-          parts.push('<div class="catalog-section-label">Stackable</div>');
-          parts.push(stackables.map(cardCourse).join(''));
+          const blockClass = foundations.length ? 'catalog-block-bottom' : 'catalog-block-top';
+          bottomHtml =
+            `<div class="${blockClass}">` +
+            `<div class="catalog-section-label">${escapeHtml(labels.stackable)}</div>` +
+            stackables.map(cardCourse).join('') +
+            '</div>';
         }
-        const body = parts.length ? parts.join('') : '<div class="catalog-card-meta">—</div>';
+
+        const body =
+          topHtml || bottomHtml
+            ? topHtml + bottomHtml
+            : '<span class="catalog-empty">—</span>';
         return `<div class="catalog-column">
           <div class="catalog-col-head">${title}</div>
           <div class="catalog-pills">${body}</div>
         </div>`;
       }
 
+      const wfeTopParts = [];
+      if (CSMPlanner.hasFeature('wfeCc')) {
+        wfeTopParts.push(cardComponent('wfe_cc', hasCc, data.wfeCcCredits, ccName));
+      }
+      if (CSMPlanner.hasFeature('riwe')) {
+        wfeTopParts.push(cardComponent('riwe', hasRiwe, data.riweCredits, riweName));
+      }
+      const capBlockClass = wfeTopParts.length ? 'catalog-block-bottom' : 'catalog-block-top';
+      const capBlock = CSMPlanner.hasFeature('capstone')
+        ? `<div class="${capBlockClass}">
+            <div class="catalog-section-label">${escapeHtml(labels.capstone || 'Capstone')}</div>
+            ${cardComponent('capstone', plan.capstone, data.capstoneCredits, capName)}
+          </div>`
+        : '';
+
       const otherColumn = `<div class="catalog-column">
-        <div class="catalog-col-head">Essentials and Capstone</div>
+        <div class="catalog-col-head">${escapeHtml(labels.essentials)}</div>
         <div class="catalog-pills">
-          <div class="catalog-section-label">Workforce Essentials</div>
-          ${cardComponent(ccName, 'wfe_cc', hasCc, 'Every trimester · 20 cr')}
-          ${cardComponent(riweName, 'riwe', hasRiwe, 'Programme Year 2')}
-          <div class="catalog-section-label">Capstone</div>
-          ${cardComponent(capName, 'capstone', plan.capstone, 'Programme Year 3 · 16 cr')}
+          ${
+            wfeTopParts.length
+              ? `<div class="catalog-block-top">
+            <div class="catalog-section-label">${escapeHtml(labels.wfeSection)}</div>
+            ${wfeTopParts.join('')}
+          </div>`
+              : ''
+          }
+          ${capBlock}
         </div>
       </div>`;
 
       const html = `
-        <div class="catalog-intro">
-          <h2>Micro-credential catalog</h2>
-          <div class="catalog-view-toggle" role="group" aria-label="Catalog highlight">
-            <button type="button" class="seg-available${catalogView === 'available' ? ' active' : ''}" data-view="available">Available</button>
-            <button type="button" class="seg-selected${catalogView === 'selected' ? ' active' : ''}" data-view="selected">Selected</button>
-          </div>
-        </div>
         <div class="catalog-matrix catalog-view-${catalogView}">
-          ${intakeColumn('Sep', 'September')}
-          ${intakeColumn('Jan', 'January')}
+          ${intakeColumn('Sep', 'Sep')}
+          ${intakeColumn('Jan', 'Jan')}
           ${intakeColumn('May', 'May')}
           ${otherColumn}
-        </div>
-        <div class="catalog-legend">
-          <span><span class="swatch" style="background:var(--foundation)"></span>Foundation</span>
-          <span><span class="swatch" style="background:var(--stackable)"></span>Stackable</span>
-          <span><span class="swatch" style="background:var(--wfe)"></span>Career Catalyst</span>
-          <span><span class="swatch" style="background:var(--riwe)"></span>Industry Work Experience</span>
-          <span><span class="swatch" style="background:var(--capstone)"></span>Capstone Project</span>
         </div>`;
 
-      document.getElementById('catalog').innerHTML = html;
-      document.querySelectorAll('.catalog-view-toggle button').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          catalogView = btn.dataset.view;
-          renderCatalog();
-        });
-      });
+      document.getElementById('catalogMatrix').innerHTML = html;
+      updateCatalogViewToggle();
     }
 
     function renderIssues(analysis) {
