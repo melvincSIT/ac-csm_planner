@@ -18,8 +18,10 @@
       "riweCredits": 10,
       "capstoneCredits": 16,
       "maxCoreTrimesters": 9,
-      "maxExtensionTrimesters": 6,
-      "maxTotalTrimesters": 15,
+      "maxExtensionTrimesters": 5,
+      "maxTotalTrimesters": 14,
+      "riweCreditsPerTrimester": 5,
+      "maxCandidatureDuration": "4 years 8 months",
       "monthCycle": [
         "Sep",
         "Jan",
@@ -29,8 +31,13 @@
         "wfeRiweYear": 2,
         "capstoneMinYear": 3,
         "wfeCcNote": "Career Catalyst offered every trimester",
-        "wfeRiweNote": "Relevant Industry Work Experience in Year 2; latest start is trimester 2 of Year 2",
-        "capstoneNote": "Capstone in Year 3 (trimesters 7–9)"
+        "wfeRiweNote": "Relevant Industry Work Experience in Year 2 (2 trimesters, 5 credits each); must finish before Capstone",
+        "capstoneNote": "Capstone in Year 3 (trimesters 7–9); starts after RIWE is complete"
+      },
+      "componentAvailability": {
+        "wfe_cc": "Anytime",
+        "riwe": "Year 2",
+        "capstone": "Year 3"
       },
       "offeringsByMonth": {
         "Sep": [
@@ -279,9 +286,11 @@
       "planHelp": [
         "Click a coloured tile to assign a module to that trimester. Click again to remove it.",
         "Leave — bottom row; mark trimesters when you are not studying.",
+        "Reattempt — repeat the previous trimester's micro-credential (up to 3 attempts total per module).",
+        "Remodule — schedule a repeat attempt for a module taken earlier (up to 3 attempts total).",
         "Career Catalyst — 10 credits; available in any trimester, but not in the same trimester as a micro-credential.",
-        "Relevant Industry Work Experience (RIWE) — 10 credits; programme Year 2 only. Start in trimester 1 or 2 of Year 2. Available after 3 micro-credentials, or 2 micro-credentials plus Career Catalyst.",
-        "Capstone — programme Year 3 only; available after 6 micro-credentials, or 5 micro-credentials plus Career Catalyst."
+        "Relevant Industry Work Experience (RIWE) — 5 credits per trimester across 2 consecutive Year 2 trimesters (10 credits total). Must be completed before Capstone.",
+        "Capstone — programme Year 3 only; available after RIWE is complete and after 6 micro-credentials, or 5 micro-credentials plus Career Catalyst."
       ],
       "candidatureDuration": "3–5 years",
       "mcDuration": "1 trimester (~3 months) each",
