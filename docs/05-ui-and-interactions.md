@@ -72,11 +72,13 @@ Extension columns use `.ext` styling in timeline headers.
 
 Row labels support hint subtext via `timelineRowLabel(label, componentAvailability hint)`.
 
-### Trimester mode exclusivity
+### Trimester modes
 
-`clearTrimesterModes(idx, keep)` — only one of leave / reattempt / remodule per trimester.
+**Leave** blocks all rows in that trimester and clears assignments when turned on.
 
-`clearTrimesterAssignments(trimester)` — clears MC, CC, RIWE in that column, RPL credits when marking leave.
+**Reattempt** and **remodule** can be enabled on the same trimester as each other and alongside the primary MC row. Each row picks its own course via `reattemptMc[]` / `remoduleMc[]`.
+
+`clearTrimesterAssignments(trimester)` — clears MC, reattempt/remodule courses, CC, RIWE in that column, RPL credits when marking leave.
 
 ### Reattempt visual
 
@@ -90,9 +92,10 @@ Row labels support hint subtext via `timelineRowLabel(label, componentAvailabili
 |-------|-----|
 | Leave | Empty slot message |
 | CC same trimester | Empty slot message |
-| Normal | Selected MC tile (click to remove) + optional offering tiles |
+| MC selected | Selected tile (click to remove) + **switch** tiles for other offerings |
+| No MC | Offering tiles from `coursesForMcSlot` |
 
-Reattempt and remodule use **separate rows** (`reattemptMc`, `remoduleMc`) and can run concurrently with the primary MC row.
+Reattempt and remodule use **separate rows** (`reattemptMc`, `remoduleMc`) and can run concurrently with the primary MC row. Toggling reattempt/remodule shows a picker (no auto-fill). When a course is selected, **switch** tiles offer other valid courses in that window.
 
 Click offering tile: `plan.mc[t-1] = courseId` → `render()`.
 

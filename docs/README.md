@@ -59,4 +59,4 @@ With a local HTTP server, `CSMPlanner.loadData()` fetches `data.json`. On `file:
 
 ## Version note
 
-Documentation reflects commit **`20dbe9f`** (concurrent MC/reattempt/remodule rows, RPL v2, RIWE catalog fix). Prior: `690d865` / `dcd1615`.
+Documentation reflects commit **`bb3ef28`** (concurrent MC/reattempt/remodule rows, RPL v2, RIWE catalog fix). Prior: `690d865` / `dcd1615`.

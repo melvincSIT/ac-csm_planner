@@ -297,7 +297,9 @@ global.__CSM_PROGRAMME_DATA__ = {
         "wfeCc": true,
         "riwe": true,
         "capstone": true,
-        "rpl": true
+        "rpl": true,
+        "reattempt": true,
+        "remodule": true
       },
       "planHelp": [
         "Click a coloured tile to assign a module to that trimester. Click again to remove it.",
@@ -325,7 +327,8 @@ global.__CSM_PROGRAMME_DATA__ = {
       "sitUrl": "https://www.singaporetech.edu.sg/sitlearn/competency-based-stackable-micro-credential-pathway/electrical-electronic-engineering",
       "bannerImage": "assets/banners/electrical-electronic-engineering.jpg",
       "bannerPosition": "center center",
-      "totalCredits": 240,
+      "totalCredits": 138,
+      "fullDegreeCredits": 240,
       "mcCredits": 18,
       "mcCount": 6,
       "foundationCount": 2,
@@ -351,7 +354,10 @@ global.__CSM_PROGRAMME_DATA__ = {
       "features": {
         "wfeCc": true,
         "riwe": true,
-        "capstone": true
+        "capstone": true,
+        "rpl": false,
+        "reattempt": false,
+        "remodule": false
       },
       "planHelp": [
         "Click a coloured tile to assign a module to that trimester. Click again to remove it.",
@@ -677,7 +683,8 @@ global.__CSM_PROGRAMME_DATA__ = {
       "sitUrl": "https://www.singaporetech.edu.sg/sitlearn/competency-based-stackable-micro-credential-pathway/infrastructure-systems-engineering",
       "bannerImage": "assets/banners/infrastructure-systems-engineering.jpg",
       "bannerPosition": "center center",
-      "totalCredits": 240,
+      "totalCredits": 138,
+      "fullDegreeCredits": 240,
       "mcCredits": 18,
       "mcCount": 6,
       "foundationCount": 2,
@@ -703,7 +710,10 @@ global.__CSM_PROGRAMME_DATA__ = {
       "features": {
         "wfeCc": true,
         "riwe": true,
-        "capstone": true
+        "capstone": true,
+        "rpl": false,
+        "reattempt": false,
+        "remodule": false
       },
       "planHelp": [
         "Click a coloured tile to assign a module to that trimester. Click again to remove it.",
@@ -1055,7 +1065,10 @@ global.__CSM_PROGRAMME_DATA__ = {
       "features": {
         "wfeCc": false,
         "riwe": false,
-        "capstone": true
+        "capstone": true,
+        "rpl": false,
+        "reattempt": false,
+        "remodule": false
       },
       "planHelp": [
         "Click a coloured tile to assign a module to that trimester. Click again to remove it.",
@@ -1207,5 +1220,4 @@ global.__CSM_PROGRAMME_DATA__ = {
       "maxCandidatureYears": 3
     }
   }
-}
-;
+};

@@ -103,38 +103,38 @@ Capstone **credits** (16) counted once at `capTs[0]` in `cumulativeCredits` / `c
 
 ### Offering filter
 
-`coursesOfferedInTrimester(intakeKey, t, plan)`:
+`coursesOfferedInTrimester` / `coursesForMcSlot(intakeKey, t, plan)`:
 
 - Month from `monthForTrimester`
 - IDs from `offeringsByMonth[month]`
-- Excludes already-used MCs (unique ids)
+- Excludes courses already in **same trimester** reattempt/remodule slots (`courseIdsUsedInTrimester`)
+- Excludes MCs completed in **other** trimesters (`uniqueMcIds`)
 - If both foundations already scheduled elsewhere, excludes foundation category
+
+`coursesForReattempt` / `coursesForRemodule`:
+
+- Prior courses with &lt;3 attempts in the **2-trimester offering window** (`courseRetryTrimesters`)
+- Excludes other slots in the **same** trimester only (not cross-trimester `usedCourseIds`)
 
 ### Assignment rules
 
 | Function | Rule |
 |----------|------|
-| `canAssignMc(t, plan)` | Not blocked; not CC trimester; not reattempt trimester |
+| `canAssignMc(t, plan)` | Not on leave; not CC trimester |
 | `canAssignCareerCatalyst(t, plan)` | Feature on; not blocked; no MC in same tri; CC not elsewhere |
 
 ### Attempt limits
 
-- `countCourseAttempts(plan, courseId)` — counts entries in `plan.mc` (reattempts/remodules count)
+- `countCourseAttempts(plan, courseId)` — counts MC + reattempt + remodule entries (`allScheduledCourseEntries`)
 - Max **3 attempts** per course id — validated in `analyze`
 
-### Reattempt
+### Reattempt / remodule
 
-`applyReattempt(plan, t)`:
+`applyReattempt(plan, t, intakeKey)` — optional helper: sets `reattemptMc[t-1]` to previous trimester’s course if in offering window. **UI does not auto-call this**; toggling reattempt shows a course picker instead.
 
-- Requires `t >= 2`
-- Sets `plan.mc[t-1] = plan.mc[t-2]`
-- Fails if would exceed 3 attempts
+`coursesForReattempt(plan, t, intakeKey)` — prior trimester course + any course taken before `t`, filtered by offering window and same-trimester dedupe.
 
-UI: toggling reattempt clears MC slot and calls `applyReattempt`.
-
-### Remodule
-
-`coursesForRemodule(plan, t, intakeKey)` — prior unique MCs with &lt;3 attempts, respecting `usedCourseIds` for that trimester.
+`coursesForRemodule(plan, t, intakeKey)` — any unique MC already in plan, same filters.
 
 ---
 
@@ -226,9 +226,13 @@ Returns:
 
 Major checks:
 
-- MC on leave trimester (not reattempt/remodule)
+- MC on leave trimester
 - MC + CC same trimester
-- Offering month mismatch (except reattempt/remodule)
+- MC offering month mismatch
+- Reattempt/remodule outside offering window
+- **Same course in multiple slots** (MC / reattempt / remodule) in one trimester
+- Reattempt/remodule row enabled but no course selected (warn)
+- **24 credits per trimester** cap (`trimesterActivityCredits`)
 - &gt;3 attempts per course
 - Foundation/stackable/MC counts and required foundation names
 - Delay trimester info message (deferral)

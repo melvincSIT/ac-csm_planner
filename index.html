@@ -211,14 +211,36 @@
       margin: 0.1rem 0 0.14rem;
     }
     .header-programme-title {
-      margin: 0.15rem 0 0;
+      display: none;
+    }
+    select.program-select {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: 2.35rem;
+      padding: 0.35rem 2.1rem 0.35rem 0.65rem;
       font-size: 0.88rem;
       font-weight: 600;
       line-height: 1.3;
-      color: rgba(255, 255, 255, 0.92);
+      color: #fff;
+      background-color: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 6px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.65rem center;
       text-shadow: 0 1px 10px rgba(0, 0, 0, 0.4);
     }
-    select.program-select,
+    [data-theme="light"] select.program-select {
+      color: var(--text);
+      background-color: rgba(255, 255, 255, 0.9);
+      border-color: rgba(0, 0, 0, 0.2);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
+      text-shadow: none;
+    }
     .program-select-display {
       display: none !important;
     }
@@ -299,9 +321,6 @@
       width: 100%;
     }
     .rpl-pick:hover { background: var(--rpl-tile-bg); }
-    select.program-select {
-      display: none !important;
-    }
     .header-sit-brand {
       margin: 0;
       font-size: 0.76rem;
@@ -1996,7 +2015,7 @@
           <div class="header-programme-row">
             <p class="header-programme-title" id="headerProgrammeTitle"></p>
             <span class="program-select-display" id="programSelectDisplay" aria-hidden="true"></span>
-            <select id="programSelect" class="program-select" aria-label="Degree programme" hidden></select>
+            <select id="programSelect" class="program-select" aria-label="Degree programme"></select>
           </div>
           <p class="header-sit-brand">Singapore Institute of Technology</p>
         </div>
@@ -2148,8 +2167,8 @@
       </div>
     </dialog>
 
-  <script src="data-embed.js?v=6"></script>
-  <script src="planner.js?v=6"></script>
+  <script src="data-embed.js?v=9"></script>
+  <script src="planner.js?v=9"></script>
   <script>
     let data, plan, intakeKey, startYear, programId;
     let creditsWereComplete = false;
@@ -2161,7 +2180,6 @@
     const INTAKE_ORDER = ['sep', 'jan', 'may'];
     const INTAKE_LABELS = { sep: 'September', jan: 'January', may: 'May' };
     const PROGRAM_KEY = 'csm-planner-program';
-    const LOCKED_PROGRAM_ID = 'applied-computing';
 
     function getYearOptions() {
       const years = [];
@@ -2819,16 +2837,22 @@ ${cloneExportContent()}
       render();
     }
 
+    function appendCourseOptionTiles(grid, courses, extraClass, titlePrefix, onPick) {
+      courses.forEach((c) => {
+        const tile = makeTile(c.name, c.category, false);
+        tile.classList.add('option', 'tile-compact');
+        if (extraClass) tile.classList.add(extraClass);
+        tile.title = `${titlePrefix}: ${c.name}`;
+        tile.addEventListener('click', () => onPick(c.id));
+        grid.appendChild(tile);
+      });
+    }
+
     function toggleReattempt(trimester) {
       const idx = trimester - 1;
       if (CSMPlanner.isOnLeave(plan, trimester)) return;
-      const next = !plan.reattempt[idx];
-      plan.reattempt[idx] = next;
-      if (next) {
-        if (!CSMPlanner.applyReattempt(plan, trimester, intakeKey)) {
-          plan.reattempt[idx] = false;
-        }
-      } else if (plan.reattemptMc) {
+      plan.reattempt[idx] = !plan.reattempt[idx];
+      if (!plan.reattempt[idx] && plan.reattemptMc) {
         plan.reattemptMc[idx] = CSMPlanner.EMPTY;
       }
       render();
@@ -2899,8 +2923,20 @@ ${cloneExportContent()}
     }
 
     function initProgramHeader() {
-      const title = document.getElementById('headerProgrammeTitle');
-      if (title) title.textContent = data.degreeTitle || data.title || '';
+      programSelectEl = document.getElementById('programSelect');
+      if (!programSelectEl) return;
+      const programs = CSMPlanner.listPrograms();
+      programSelectEl.innerHTML = programs
+        .map(
+          (p) =>
+            `<option value="${escapeHtml(p.id)}"${p.id === programId ? ' selected' : ''}>${escapeHtml(p.degreeTitle)}</option>`
+        )
+        .join('');
+      programSelectEl.value = programId;
+      if (!programSelectEl.dataset.wired) {
+        programSelectEl.dataset.wired = '1';
+        programSelectEl.addEventListener('change', () => setProgram(programSelectEl.value));
+      }
     }
 
     function updateTimelineScrollHints() {
@@ -2938,6 +2974,8 @@ ${cloneExportContent()}
       populateProgrammeDuration();
       const durationSel = document.getElementById('programmeDuration');
       if (durationSel) durationSel.value = '0';
+      populateYearOptions();
+      initCohortWheels();
       if (programSelectEl) programSelectEl.value = programId;
       initProgramHeader();
       updateProgramCopy();
@@ -3020,9 +3058,8 @@ ${cloneExportContent()}
     async function init() {
       initTheme();
       initFullscreen();
-      data = await CSMPlanner.loadData(LOCKED_PROGRAM_ID);
-      programId = LOCKED_PROGRAM_ID;
-      localStorage.setItem(PROGRAM_KEY, programId);
+      data = await CSMPlanner.loadData(localStorage.getItem(PROGRAM_KEY) || undefined);
+      programId = CSMPlanner.getActiveProgramId();
       preloadProgramBanners();
 
       intakeKey = INTAKE_ORDER.find((k) => data.intakes[k]) || 'sep';
@@ -3350,13 +3387,13 @@ ${cloneExportContent()}
       reattemptRow.className = 'reattempt-row';
       reattemptRow.innerHTML = '<td class="row-label">Reattempt</td>';
       appendTriColumns(reattemptRow, maxT, (t) => buildReattemptCell(t, ayGroups));
-      body.appendChild(reattemptRow);
+      if (CSMPlanner.hasFeature('reattempt')) body.appendChild(reattemptRow);
 
       const remoduleRow = document.createElement('tr');
       remoduleRow.className = 'remodule-row';
       remoduleRow.innerHTML = '<td class="row-label">Remodule</td>';
       appendTriColumns(remoduleRow, maxT, (t) => buildRemoduleCell(t, ayGroups));
-      body.appendChild(remoduleRow);
+      if (CSMPlanner.hasFeature('remodule')) body.appendChild(remoduleRow);
 
       if (CSMPlanner.hasFeature('rpl')) {
         const rplRow = document.createElement('tr');
@@ -3493,20 +3530,21 @@ ${cloneExportContent()}
           render();
         });
         grid.appendChild(tile);
+        const alts = CSMPlanner.coursesForReattempt(plan, trimester, intakeKey).filter((c) => c.id !== current);
+        if (alts.length) {
+          appendCourseOptionTiles(grid, alts, 'reattempt', 'Switch reattempt to', (id) => {
+            plan.reattemptMc[idx] = id;
+            render();
+          });
+        }
       } else if (on) {
         const options = CSMPlanner.coursesForReattempt(plan, trimester, intakeKey);
         if (!options.length) {
           appendEmptySlot(grid, 'No reattempt options in offering window');
         } else {
-          options.forEach((c) => {
-            const tile = makeTile(c.name, c.category, false);
-            tile.classList.add('option', 'tile-compact', 'reattempt');
-            tile.title = `${c.name} — reattempt — click to schedule`;
-            tile.addEventListener('click', () => {
-              plan.reattemptMc[idx] = c.id;
-              render();
-            });
-            grid.appendChild(tile);
+          appendCourseOptionTiles(grid, options, 'reattempt', 'Reattempt', (id) => {
+            plan.reattemptMc[idx] = id;
+            render();
           });
         }
       } else {
@@ -3552,20 +3590,21 @@ ${cloneExportContent()}
           render();
         });
         grid.appendChild(tile);
+        const alts = CSMPlanner.coursesForRemodule(plan, trimester, intakeKey).filter((c) => c.id !== current);
+        if (alts.length) {
+          appendCourseOptionTiles(grid, alts, 'remodule', 'Switch remodule to', (id) => {
+            plan.remoduleMc[idx] = id;
+            render();
+          });
+        }
       } else if (on) {
         const options = CSMPlanner.coursesForRemodule(plan, trimester, intakeKey);
         if (!options.length) {
           appendEmptySlot(grid, 'No remodule options in offering window');
         } else {
-          options.forEach((c) => {
-            const tile = makeTile(c.name, c.category, false);
-            tile.classList.add('option', 'tile-compact', 'remodule');
-            tile.title = `${c.name} — remodule — click to schedule`;
-            tile.addEventListener('click', () => {
-              plan.remoduleMc[idx] = c.id;
-              render();
-            });
-            grid.appendChild(tile);
+          appendCourseOptionTiles(grid, options, 'remodule', 'Remodule', (id) => {
+            plan.remoduleMc[idx] = id;
+            render();
           });
         }
       } else {
@@ -3699,20 +3738,21 @@ ${cloneExportContent()}
           render();
         });
         grid.appendChild(tile);
+        const alts = CSMPlanner.coursesForMcSlot(intakeKey, trimester, plan);
+        if (alts.length) {
+          appendCourseOptionTiles(grid, alts, null, 'Switch to', (id) => {
+            plan.mc[trimester - 1] = id;
+            render();
+          });
+        }
       } else if (CSMPlanner.canAssignMc(trimester, plan)) {
-        const tiles = CSMPlanner.tilesForTrimester(intakeKey, trimester, plan);
-        if (!tiles.length) {
+        const courses = CSMPlanner.coursesForMcSlot(intakeKey, trimester, plan);
+        if (!courses.length) {
           appendEmptySlot(grid, 'Nothing offered this trimester');
         } else {
-          tiles.forEach((t) => {
-            const tile = makeTile(t.course.name, t.course.category, false);
-            tile.classList.add('option', 'tile-compact');
-            tile.title = t.course.name + ' — 18 credits — click to add';
-            tile.addEventListener('click', () => {
-              plan.mc[trimester - 1] = t.id;
-              render();
-            });
-            grid.appendChild(tile);
+          appendCourseOptionTiles(grid, courses, null, 'Add micro-credential', (id) => {
+            plan.mc[trimester - 1] = id;
+            render();
           });
         }
       } else {
