@@ -53,6 +53,8 @@
       --reattempt-tile-border: #d4a72c;
       --remodule-tile-bg: #f3ecff;
       --remodule-tile-border: #8b6cc1;
+      --rpl-tile-bg: #e8f4fc;
+      --rpl-tile-border: #2a7ab8;
       --empty-slot-bg: #fafbfc;
       --row-label-bg: #f7f9fc;
       --cohort-btn-bg: linear-gradient(165deg, #fafcfd 0%, #e4edf5 100%);
@@ -108,6 +110,8 @@
       --reattempt-tile-border: #c9a227;
       --remodule-tile-bg: #2e2548;
       --remodule-tile-border: #9b7fd4;
+      --rpl-tile-bg: #1a3040;
+      --rpl-tile-border: #4a9fd4;
       --empty-slot-bg: #1e2836;
       --row-label-bg: #1a2432;
       --cohort-btn-bg: linear-gradient(165deg, #2a384c 0%, #1c2636 100%);
@@ -234,6 +238,36 @@
       border-style: dashed;
     }
     .tile.reattempt.selected { border-style: solid; color: var(--text); }
+    .tile.has-tile-sticker {
+      position: relative;
+      overflow: visible;
+    }
+    .tile-sticker {
+      position: absolute;
+      top: -0.12rem;
+      right: -0.12rem;
+      padding: 0.1rem 0.3rem;
+      border-radius: 0 5px 0 5px;
+      font-size: 0.45rem;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 2;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+    }
+    .tile-sticker--reattempt {
+      background: var(--reattempt-tile-border);
+      color: #fff;
+    }
+    .catalog-card .tile-sticker {
+      top: 0.18rem;
+      right: 0.18rem;
+      font-size: 0.42rem;
+      padding: 0.08rem 0.26rem;
+      border-radius: 0 4px 0 4px;
+    }
     .tile.remodule {
       background: var(--remodule-tile-bg);
       color: #6d4cbd;
@@ -243,6 +277,28 @@
     .tile.remodule.selected { border-style: solid; color: var(--text); }
     .reattempt-row td.cell,
     .remodule-row td.cell { padding: 1px 2px; vertical-align: middle; }
+    .rpl-row td.cell { padding: 1px 2px; vertical-align: middle; }
+    .tile.rpl {
+      background: var(--rpl-tile-bg);
+      color: var(--text);
+      border-color: var(--rpl-tile-border);
+      border-style: dashed;
+      font-size: 0.72rem;
+      line-height: 1.15;
+    }
+    .tile.rpl.selected { border-style: solid; }
+    .rpl-pick {
+      font-size: 0.62rem;
+      padding: 2px 4px;
+      margin-top: 2px;
+      border: 1px solid var(--rpl-tile-border);
+      border-radius: 4px;
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+      width: 100%;
+    }
+    .rpl-pick:hover { background: var(--rpl-tile-bg); }
     select.program-select {
       display: none !important;
     }
@@ -1500,6 +1556,7 @@
       gap: 4px;
       justify-content: center;
       min-height: var(--tile-min-h);
+      overflow: visible;
     }
     .tile {
       width: 100%;
@@ -2087,8 +2144,8 @@
       </div>
     </dialog>
 
-  <script src="data-embed.js?v=4"></script>
-  <script src="planner.js?v=4"></script>
+  <script src="data-embed.js?v=5"></script>
+  <script src="planner.js?v=5"></script>
   <script>
     let data, plan, intakeKey, startYear, programId;
     let creditsWereComplete = false;
@@ -2104,13 +2161,15 @@
 
     function getYearOptions() {
       const years = [];
+      const minYear = CSMPlanner.getMinCohortYear ? CSMPlanner.getMinCohortYear() : 2023;
       const endYear = new Date().getFullYear() + 4;
-      for (let y = 2024; y <= endYear; y++) years.push(y);
+      for (let y = minYear; y <= endYear; y++) years.push(y);
       return years;
     }
 
     function defaultStartYear() {
-      return Math.max(2024, new Date().getFullYear());
+      if (CSMPlanner.getDefaultCohortYear) return CSMPlanner.getDefaultCohortYear();
+      return 2023;
     }
 
     function pulseWheelSegment(el, direction) {
@@ -2327,6 +2386,18 @@
       while (plan.remodule.length < data.maxTotalTrimesters) {
         plan.remodule.push(false);
       }
+      if (!plan.rplCredits) {
+        plan.rplCredits = new Array(data.maxTotalTrimesters).fill(0);
+      }
+      if (!plan.rplMc) {
+        plan.rplMc = new Array(data.maxTotalTrimesters).fill(null);
+      }
+      while (plan.rplCredits.length < data.maxTotalTrimesters) {
+        plan.rplCredits.push(0);
+      }
+      while (plan.rplMc.length < data.maxTotalTrimesters) {
+        plan.rplMc.push(null);
+      }
     }
 
     function applyAutoExtension() {
@@ -2357,6 +2428,10 @@
       if (plan.careerCatalystAt === trimester) plan.careerCatalystAt = null;
       if (plan.riweAt != null && CSMPlanner.isRiweActiveTrimester(plan, intakeKey, trimester)) {
         plan.riweAt = null;
+      }
+      if (plan.rplCredits && plan.rplCredits[idx]) {
+        plan.rplCredits[idx] = 0;
+        plan.rplMc[idx] = null;
       }
     }
 
@@ -2619,8 +2694,16 @@ ${cloneExportContent()}
         ) {
           parts.push(CSMPlanner.componentName('riwe'));
         }
-        if (plan.capstone && data.intakes[intakeKey].capstoneTrimesters.includes(t)) {
+        if (plan.capstone && CSMPlanner.capstoneTrimestersFor(plan, intakeKey, maxT).includes(t)) {
           parts.push(CSMPlanner.componentName('capstone'));
+        }
+        const rplCr = CSMPlanner.rplCreditsAt(plan, t);
+        if (rplCr > 0) {
+          const rplId = CSMPlanner.rplMcAt(plan, t);
+          const rplLabel = rplId
+            ? `RPL ${CSMPlanner.selectionLabel(rplId)?.name || 'MC'} (${rplCr} cr)`
+            : `RPL (${rplCr} cr)`;
+          parts.push(rplLabel);
         }
         if (CSMPlanner.isOnLeave(plan, t)) parts.push('Leave');
         if (parts.length) {
@@ -3131,6 +3214,7 @@ ${cloneExportContent()}
 
     function render() {
       ensurePlanShape();
+      CSMPlanner.sanitizePlanSchedule(plan, intakeKey);
       applyAutoExtension();
       const maxT = maxTrimestersVisible();
       const intake = data.intakes[intakeKey];
@@ -3232,6 +3316,14 @@ ${cloneExportContent()}
       remoduleRow.innerHTML = '<td class="row-label">Remodule</td>';
       appendTriColumns(remoduleRow, maxT, (t) => buildRemoduleCell(t, ayGroups));
       body.appendChild(remoduleRow);
+
+      if (CSMPlanner.hasFeature('rpl')) {
+        const rplRow = document.createElement('tr');
+        rplRow.className = 'rpl-row';
+        rplRow.innerHTML = '<td class="row-label">RPL<span class="row-label-hint">max 24 cr</span></td>';
+        appendTriColumns(rplRow, maxT, (t) => buildRplCell(t, ayGroups));
+        body.appendChild(rplRow);
+      }
     }
 
     function buildTimelineHead(maxT) {
@@ -3373,6 +3465,77 @@ ${cloneExportContent()}
       return td;
     }
 
+    function openRplMcPicker(trimester) {
+      const idx = trimester - 1;
+      const options = CSMPlanner.coursesForRpl(plan, trimester);
+      if (!options.length) {
+        alert('No micro-credentials available for RPL exemption.');
+        return;
+      }
+      const names = options.map((c, i) => `${i + 1}. ${c.name}`).join('\n');
+      const choice = prompt(
+        `Select exempted micro-credential (Trimester ${trimester}):\n\n${names}\n\nEnter number (1–${options.length}), or cancel:`
+      );
+      if (choice == null || choice.trim() === '') return;
+      const n = parseInt(choice, 10);
+      if (n >= 1 && n <= options.length) {
+        plan.rplMc[idx] = options[n - 1].id;
+        render();
+      }
+    }
+
+    function buildRplCell(trimester, ayGroups) {
+      const td = document.createElement('td');
+      td.className = 'cell';
+      const grid = document.createElement('div');
+      grid.className = 'tile-grid';
+      const idx = trimester - 1;
+      const credits = CSMPlanner.rplCreditsAt(plan, trimester);
+      const mcId = CSMPlanner.rplMcAt(plan, trimester);
+      const maxCr = CSMPlanner.rplMaxPerTrimester();
+
+      if (credits > 0) {
+        let label = `RPL\n${credits} cr`;
+        if (mcId && credits >= (data.mcCredits || 18)) {
+          const info = CSMPlanner.selectionLabel(mcId);
+          if (info) label = `RPL\n${info.name.split(' ')[0]}`;
+        }
+        const tile = makeTile(label, 'rpl', true);
+        tile.title = `RPL: ${credits} credits (max ${maxCr}/trimester) — click to cycle amount`;
+        tile.addEventListener('click', () => {
+          plan.rplCredits[idx] = CSMPlanner.cycleRplCredits(credits);
+          if (plan.rplCredits[idx] < (data.mcCredits || 18)) plan.rplMc[idx] = null;
+          render();
+        });
+        grid.appendChild(tile);
+        if (credits >= (data.mcCredits || 18)) {
+          const pickBtn = document.createElement('button');
+          pickBtn.type = 'button';
+          pickBtn.className = 'rpl-pick';
+          pickBtn.textContent = mcId ? 'Change MC' : 'Pick MC';
+          pickBtn.title = 'Select exempted micro-credential (18 cr = full MC)';
+          pickBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openRplMcPicker(trimester);
+          });
+          grid.appendChild(pickBtn);
+        }
+      } else {
+        const tile = makeTile('RPL', 'rpl', false);
+        tile.classList.add('option', 'compact');
+        tile.title = `Recognition of Prior Learning — click to add (max ${maxCr} cr/trimester)`;
+        tile.addEventListener('click', () => {
+          plan.rplCredits[idx] = CSMPlanner.cycleRplCredits(0);
+          render();
+        });
+        grid.appendChild(tile);
+      }
+
+      td.appendChild(grid);
+      finishTriCell(td, trimester, ayGroups);
+      return td;
+    }
+
     function buildMcCell(trimester, intake, ayGroups) {
       const td = document.createElement('td');
       td.className = 'cell';
@@ -3391,6 +3554,7 @@ ${cloneExportContent()}
         if (current) {
           const info = CSMPlanner.selectionLabel(current);
           const tile = makeTile(info.name, info.kind, true);
+          addTileSticker(tile, reattemptStickerLabel(current), 'reattempt');
           tile.title = `${info.name} — reattempt — click to remove`;
           tile.addEventListener('click', () => {
             plan.mc[trimester - 1] = CSMPlanner.EMPTY;
@@ -3539,8 +3703,8 @@ ${cloneExportContent()}
         return td;
       }
 
-      if (CSMPlanner.isOnLeave(plan, trimester)) {
-        appendEmptySlot(grid, 'On leave — no RIWE this trimester');
+      if (CSMPlanner.isTrimesterBlocked(plan, trimester)) {
+        appendEmptySlot(grid, 'Delay trimester — no RIWE this trimester');
         td.appendChild(grid);
         finishTriCell(td, trimester, ayGroups);
         return td;
@@ -3584,7 +3748,7 @@ ${cloneExportContent()}
       const capHint = CSMPlanner.componentAvailability('capstone');
       tr.innerHTML = `<td class="row-label">${timelineRowLabel(label, capHint)}</td>`;
 
-      const capTs = CSMPlanner.capstoneTrimestersFor(intakeKey, maxT);
+      const capTs = CSMPlanner.capstoneTrimestersFor(plan, intakeKey, maxT);
       const firstCap = capTs[0];
       const lastCap = capTs[capTs.length - 1];
 
@@ -3637,7 +3801,7 @@ ${cloneExportContent()}
         const td = document.createElement('td');
         td.className = 'cell';
         if (trimesters.includes(t)) {
-          if (!(kind === 'capstone' && !CSMPlanner.canStartCapstone(t))) {
+          if (!(kind === 'capstone' && !CSMPlanner.canStartCapstone(plan, t))) {
             const grid = document.createElement('div');
             grid.className = 'tile-grid';
             const tile = makeTile(label, kind, plan[planKey]);
@@ -3657,6 +3821,27 @@ ${cloneExportContent()}
       return tr;
     }
 
+    function addTileSticker(tile, label, variant) {
+      tile.classList.add('has-tile-sticker');
+      const sticker = document.createElement('span');
+      sticker.className = `tile-sticker tile-sticker--${variant}`;
+      sticker.setAttribute('aria-hidden', 'true');
+      sticker.textContent = label;
+      tile.appendChild(sticker);
+    }
+
+    function reattemptStickerLabel(courseId) {
+      const attempts = CSMPlanner.countCourseAttempts(plan, courseId);
+      return attempts > 1 ? `Attempt ${attempts}` : 'Re-attempt';
+    }
+
+    function isCourseOnReattemptTrimester(courseId) {
+      for (let i = 0; i < plan.mc.length; i++) {
+        if (plan.mc[i] === courseId && plan.reattempt && plan.reattempt[i]) return true;
+      }
+      return false;
+    }
+
     function makeTile(label, kind, selected) {
       const el = document.createElement('div');
       el.className = 'tile ' + kind + (selected ? ' selected' : '');
@@ -3672,6 +3857,9 @@ ${cloneExportContent()}
 
     function renderCatalog() {
       const selected = new Set(plan.mc.filter(Boolean));
+      (plan.rplMc || []).forEach((id, i) => {
+        if (id && CSMPlanner.rplCreditsAt(plan, i + 1) >= (data.mcCredits || 18)) selected.add(id);
+      });
       const hasCc = plan.careerCatalystAt != null;
       const hasRiwe = plan.riweAt != null;
       const groups = CSMPlanner.coursesGrouped();
@@ -3696,7 +3884,12 @@ ${cloneExportContent()}
 
       function cardCourse(c) {
         const sel = selected.has(c.id);
-        return `<div class="catalog-card ${c.category}${sel ? ' selected' : ''}" title="${escapeHtml(c.name)}">
+        const reattempt = isCourseOnReattemptTrimester(c.id);
+        const sticker = reattempt
+          ? `<span class="tile-sticker tile-sticker--reattempt" aria-hidden="true">${escapeHtml(reattemptStickerLabel(c.id))}</span>`
+          : '';
+        return `<div class="catalog-card ${c.category}${sel ? ' selected' : ''}${reattempt ? ' has-tile-sticker' : ''}" title="${escapeHtml(c.name)}">
+          ${sticker}
           <span class="catalog-card-title">${catalogCardTitle(c.name)}</span>
           <span class="catalog-card-cr">${c.credits}</span>
         </div>`;
