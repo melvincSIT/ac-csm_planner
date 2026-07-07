@@ -25,13 +25,18 @@ global.__CSM_PROGRAMME_DATA__ = {
       "minCohortYear": 2023,
       "defaultCohortYear": 2023,
       "rplMaxCreditsPerTrimester": 24,
+      "rplMaxTotalCredits": 90,
+      "rplWfeCredits": 10,
       "rplCreditSteps": [
         0,
+        3,
         6,
+        9,
         12,
-        18,
-        24
+        15,
+        18
       ],
+      "reattemptOfferWindowTrimesters": 2,
       "monthCycle": [
         "Sep",
         "Jan",
@@ -299,7 +304,8 @@ global.__CSM_PROGRAMME_DATA__ = {
         "Leave — mark trimesters when you are not studying; defers RIWE and Capstone.",
         "Reattempt — repeat the previous trimester's micro-credential (up to 3 attempts total per module); defers RIWE and Capstone.",
         "Remodule — schedule a repeat attempt for a module taken earlier (up to 3 attempts total); defers RIWE and Capstone.",
-        "RPL (Recognition of Prior Learning) — up to 24 credits per trimester. Click to cycle 0→6→12→18→24 cr. At 18+ cr, use Pick MC for a full micro-credential exemption (counts as completed). Partial credits (6 or 12) count toward degree total only.",
+        "RPL (Recognition of Prior Learning) — MC RPL in steps of 3 up to 18 cr per trimester; WFE RPL is 10 cr (Career Catalyst). Max 90 cr RPL total; max 24 cr per trimester including MC, reattempt, and remodule.",
+        "Micro-credential, Reattempt, and Remodule can each hold a different course in the same trimester (subject to the 24 cr/trimester cap). Reattempt and remodule are only allowed in the two trimesters when that course is offered.",
         "Career Catalyst — 10 credits; available in any trimester, but not in the same trimester as a micro-credential.",
         "Relevant Industry Work Experience (RIWE) — 5 credits per trimester across 2 study-Year-2 trimesters (10 credits total). Must be completed before Capstone.",
         "Capstone — study Year 3 only; available after RIWE is complete and after 6 micro-credentials, or 5 micro-credentials plus Career Catalyst."

@@ -59,4 +59,4 @@ With a local HTTP server, `CSMPlanner.loadData()` fetches `data.json`. On `file:
 
 ## Version note
 
-Documentation reflects the codebase as of commit **`dcd1615`** (Sep 2023 cohort, deferral-aware RIWE/Capstone, RPL row). Rollback reference: tag `pre-cohort-rpl-deferral` / branch `backup/pre-cohort-rpl-deferral` → commit `289d791`.
+Documentation reflects commit **`20dbe9f`** (concurrent MC/reattempt/remodule rows, RPL v2, RIWE catalog fix). Prior: `690d865` / `dcd1615`.

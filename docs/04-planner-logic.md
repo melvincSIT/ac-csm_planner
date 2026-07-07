@@ -10,19 +10,26 @@ Created by `emptyPlan()`:
 
 ```javascript
 {
-  mc: string[14],           // course id or CSMPlanner.EMPTY ('')
-  careerCatalystAt: null,   // 1-based trimester number, or null
-  riweAt: null,             // calendar trimester where RIWE starts
-  capstone: false,          // boolean — capstone marked on timeline
+  mc: string[14],              // primary micro-credential row
+  reattemptMc: string[14],     // reattempt row (separate course per trimester)
+  remoduleMc: string[14],      // remodule row (separate course per trimester)
+  careerCatalystAt: null,
+  riweAt: null,
+  capstone: false,
   leave: boolean[14],
-  reattempt: boolean[14],
+  reattempt: boolean[14],       // row enabled flags
   remodule: boolean[14],
-  rplCredits: number[14],   // 0 or step from rplCreditSteps
-  rplMc: (string|null)[14]  // exempted course id when rplCredits >= mcCredits
+  rplCredits: number[14],       // MC RPL: 0,3,6,9,12,15,18
+  rplMc: (string|null)[14],
+  rplWfe: boolean[14]          // WFE RPL 10 cr (Career Catalyst exemption)
 }
 ```
 
-Array length = `DATA.maxTotalTrimesters` (14 for AC).
+**Concurrent rows:** MC, Reattempt, and Remodule can each hold a different course in the same calendar trimester. Leave blocks all rows. **Max 24 credits per trimester** across all activity in that trimester (`trimesterActivityCredits`).
+
+**Reattempt / remodule offering window:** Only allowed in the **2 trimesters** starting when a course is offered (`reattemptOfferWindowTrimesters` + `courseRetryTrimesters`).
+
+**RPL:** MC steps of 3 up to 18 cr; WFE RPL 10 cr; **max 90 cr RPL total** (`rplMaxTotalCredits`).
 
 ---
 

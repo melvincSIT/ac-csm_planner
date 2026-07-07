@@ -66,9 +66,9 @@ Extension columns use `.ext` styling in timeline headers.
 | RIWE | `buildRiweCell` | if `hasFeature('riwe')`; slots from `riweCellTrimesters` |
 | Capstone | `buildCapstoneRow` | colspan across `capstoneTrimestersFor(plan,…)` |
 | Leave | `buildLeaveCell` | `toggleLeave` |
-| Reattempt | `buildReattemptCell` | `toggleReattempt` + sticker on MC tiles |
-| Remodule | `buildRemoduleCell` | `toggleRemodule` + MC picker |
-| RPL | `buildRplCell` | if `hasFeature('rpl')`; cycle credits + Pick MC |
+| Reattempt | `buildReattemptCell` | `reattemptMc[]` — course picker in offering window |
+| Remodule | `buildRemoduleCell` | `remoduleMc[]` — course picker in offering window |
+| RPL | `buildRplCell` | MC RPL cycle + WFE RPL toggle |
 
 Row labels support hint subtext via `timelineRowLabel(label, componentAvailability hint)`.
 
@@ -89,9 +89,10 @@ Row labels support hint subtext via `timelineRowLabel(label, componentAvailabili
 | State | UI |
 |-------|-----|
 | Leave | Empty slot message |
-| Reattempt | Shows repeated MC or empty if no prior MC |
-| Remodule | Pick list from `coursesForRemodule` or selected MC |
+| CC same trimester | Empty slot message |
 | Normal | Selected MC tile (click to remove) + optional offering tiles |
+
+Reattempt and remodule use **separate rows** (`reattemptMc`, `remoduleMc`) and can run concurrently with the primary MC row.
 
 Click offering tile: `plan.mc[t-1] = courseId` → `render()`.
 
@@ -116,9 +117,8 @@ Toggle `plan.capstone` only if `canShowCapstoneOption(plan, firstCap, intakeKey)
 
 ## RPL cell
 
-- Click empty/active tile: `cycleRplCredits` on `plan.rplCredits[idx]`
-- At ≥ 18 cr: **Pick MC** button → `openRplMcPicker` (prompt with numbered list)
-- Clearing below 18 cr clears `plan.rplMc[idx]`
+- **MC RPL** — click to cycle `0→3→6→…→18` cr; Pick MC at 18 cr
+- **WFE RPL** — toggle 10 cr (Career Catalyst exemption); mutually exclusive with scheduled CC
 
 ---
 
@@ -126,10 +126,19 @@ Toggle `plan.capstone` only if `canShowCapstoneOption(plan, firstCap, intakeKey)
 
 Two views via `#catalogViewToggle`:
 
-- **available** — all courses by Sep/Jan/May columns
+- **available** — all courses by Sep/Jan/May columns; selected WFE/RIWE/Capstone stay visible
 - **selected** — only MCs in plan + full RPL exemptions
 
-Selected state: `plan.mc` ids + RPL exempted ids. Reattempt courses show corner sticker.
+Selected state: all `mc`, `reattemptMc`, `remoduleMc` ids + RPL exempted ids. Reattempt courses show corner sticker.
+
+### Catalog “Available” vs “Selected”
+
+- **Available** dims scheduled MC cards; **WFE / RIWE / Capstone** component cards stay fully visible when selected.
+- RIWE credits in stat cards require `plan.riweAt != null` (not merely hint slots).
+
+### RIWE after Clear all
+
+`emptyPlan()` sets `riweAt = null`; `isRiweActiveTrimester` is false so RIWE is not counted or shown as selected.
 
 ---
 

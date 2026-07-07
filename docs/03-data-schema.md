@@ -64,8 +64,11 @@
 
 | Field | Value |
 |-------|-------|
-| `rplMaxCreditsPerTrimester` | 24 |
-| `rplCreditSteps` | `[0, 6, 12, 18, 24]` |
+| `rplMaxCreditsPerTrimester` | 24 | Per-trimester cap (all activity) |
+| `rplMaxTotalCredits` | 90 | Total RPL across plan |
+| `rplWfeCredits` | 10 | WFE / Career Catalyst RPL block |
+| `rplCreditSteps` | `[0,3,6,9,12,15,18]` | MC RPL click cycle |
+| `reattemptOfferWindowTrimesters` | 2 | Reattempt/remodule allowed trimesters per offering |
 
 Gated by `features.rpl: true`.
 

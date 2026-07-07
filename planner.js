@@ -239,6 +239,8 @@
   function emptyPlan() {
     return {
       mc: new Array(DATA.maxTotalTrimesters).fill(EMPTY),
+      reattemptMc: new Array(DATA.maxTotalTrimesters).fill(EMPTY),
+      remoduleMc: new Array(DATA.maxTotalTrimesters).fill(EMPTY),
       careerCatalystAt: null,
       riweAt: null,
       capstone: false,
@@ -247,6 +249,7 @@
       remodule: new Array(DATA.maxTotalTrimesters).fill(false),
       rplCredits: new Array(DATA.maxTotalTrimesters).fill(0),
       rplMc: new Array(DATA.maxTotalTrimesters).fill(null),
+      rplWfe: new Array(DATA.maxTotalTrimesters).fill(false),
     };
   }
 
@@ -294,12 +297,129 @@
     return DATA.defaultCohortYear || getMinCohortYear();
   }
 
+  function rplMaxTotalCredits() {
+    return DATA.rplMaxTotalCredits || 90;
+  }
+
+  function rplWfeCredits() {
+    return DATA.rplWfeCredits || 10;
+  }
+
+  function reattemptOfferWindow() {
+    return DATA.reattemptOfferWindowTrimesters || 2;
+  }
+
+  function rplCreditSteps() {
+    return DATA.rplCreditSteps || [0, 3, 6, 9, 12, 15, 18];
+  }
+
+  function rplWfeAt(plan, trimester) {
+    if (!plan.rplWfe) return false;
+    return !!plan.rplWfe[trimester - 1];
+  }
+
+  function courseAtTrimester(plan, trimester) {
+    const idx = trimester - 1;
+    return (
+      (plan.mc && plan.mc[idx]) ||
+      (plan.reattemptMc && plan.reattemptMc[idx]) ||
+      (plan.remoduleMc && plan.remoduleMc[idx]) ||
+      null
+    );
+  }
+
+  function allScheduledCourseEntries(plan) {
+    const entries = [];
+    const push = (arr, slot) => {
+      if (!arr) return;
+      arr.forEach((id, i) => {
+        if (id) entries.push({ trimester: i + 1, id, slot });
+      });
+    };
+    push(plan.mc, 'mc');
+    push(plan.reattemptMc, 'reattempt');
+    push(plan.remoduleMc, 'remodule');
+    return entries;
+  }
+
+  function totalRplCredits(plan) {
+    let total = 0;
+    (plan.rplCredits || []).forEach((cr) => {
+      total += cr || 0;
+    });
+    (plan.rplWfe || []).forEach((on) => {
+      if (on) total += rplWfeCredits();
+    });
+    return total;
+  }
+
+  function courseRetryTrimesters(intakeKey, courseId, maxTrimester) {
+    const allowed = new Set();
+    const window = reattemptOfferWindow();
+    for (let t = 1; t <= maxTrimester; t++) {
+      if (!isCourseOfferedInTrimester(intakeKey, t, courseId)) continue;
+      for (let w = 0; w < window && t + w <= maxTrimester; w++) {
+        allowed.add(t + w);
+      }
+    }
+    return allowed;
+  }
+
+  function trimesterActivityCredits(plan, intakeKey, trimester) {
+    const idx = trimester - 1;
+    let total = 0;
+    [plan.mc, plan.reattemptMc, plan.remoduleMc].forEach((arr) => {
+      const id = arr && arr[idx];
+      if (!id) return;
+      const c = courseById(id);
+      if (c) total += c.credits;
+    });
+    total += rplCreditsAt(plan, trimester);
+    if (rplWfeAt(plan, trimester)) total += rplWfeCredits();
+    if (plan.careerCatalystAt === trimester) total += DATA.wfeCcCredits;
+    if (plan.riweAt != null && isRiweActiveTrimester(plan, intakeKey, trimester) && !isOnLeave(plan, trimester)) {
+      total += riweCreditsPerTrimester();
+    }
+    return total;
+  }
+
+  function addUniqueMcCredits(plan, countedMc, onCourse) {
+    allScheduledCourseEntries(plan).forEach(({ id }) => {
+      if (!id || countedMc.has(id)) return;
+      const c = courseById(id);
+      if (!c) return;
+      countedMc.add(id);
+      onCourse(c);
+    });
+  }
+
   function rplMaxPerTrimester() {
     return DATA.rplMaxCreditsPerTrimester || 24;
   }
 
-  function rplCreditSteps() {
-    return DATA.rplCreditSteps || [0, 6, 12, 18, 24];
+  function cycleRplWfe(on) {
+    return !on;
+  }
+
+  function isOnLeaveOnly(plan, trimester) {
+    return isOnLeave(plan, trimester);
+  }
+
+  function countCourseAttempts(plan, courseId) {
+    let n = 0;
+    allScheduledCourseEntries(plan).forEach(({ id }) => {
+      if (id === courseId) n++;
+    });
+    return n;
+  }
+
+  function uniqueMcIds(plan) {
+    const ids = new Set();
+    allScheduledCourseEntries(plan).forEach(({ id }) => ids.add(id));
+    (plan.rplMc || []).forEach((id, i) => {
+      if (id && rplCreditsAt(plan, i + 1) >= (DATA.mcCredits || 18)) ids.add(id);
+    });
+    return ids;
   }
 
   function rplCreditsAt(plan, trimester) {
@@ -322,22 +442,6 @@
 
   function isTrimesterBlocked(plan, trimester) {
     return isOnLeave(plan, trimester) || isOnReattempt(plan, trimester) || isOnRemodule(plan, trimester);
-  }
-
-  function countCourseAttempts(plan, courseId) {
-    let n = 0;
-    plan.mc.forEach((id) => {
-      if (id === courseId) n++;
-    });
-    return n;
-  }
-
-  function uniqueMcIds(plan) {
-    const ids = new Set(plan.mc.filter(Boolean));
-    (plan.rplMc || []).forEach((id, i) => {
-      if (id && rplCreditsAt(plan, i + 1) >= (DATA.mcCredits || 18)) ids.add(id);
-    });
-    return ids;
   }
 
   function riweCreditsPerTrimester() {
@@ -415,15 +519,15 @@
     const required = Object.values(DATA.foundationSlots || {});
     if (!required.length) return false;
     const scheduledNames = new Set();
-    plan.mc.forEach((id) => {
+    allScheduledCourseEntries(plan).forEach(({ id }) => {
+      const c = courseById(id);
+      if (c) scheduledNames.add(c.name);
+    });
+    (plan.rplMc || []).forEach((id) => {
       const c = courseById(id);
       if (c) scheduledNames.add(c.name);
     });
     return required.every((name) => scheduledNames.has(name));
-  }
-
-  function hasCareerCatalystBefore(plan, trimester) {
-    return plan.careerCatalystAt != null && plan.careerCatalystAt < trimester;
   }
 
   function courseIdsOfferedInMonth(month) {
@@ -432,8 +536,8 @@
 
   function usedCourseIds(plan, exceptTrimester) {
     const used = new Set();
-    plan.mc.forEach((sel, i) => {
-      if (sel && i + 1 !== exceptTrimester) used.add(sel);
+    allScheduledCourseEntries(plan).forEach(({ trimester, id }) => {
+      if (trimester !== exceptTrimester) used.add(id);
     });
     return used;
   }
@@ -464,16 +568,16 @@
 
   function canAssignCareerCatalyst(trimester, plan) {
     if (!hasFeature('wfeCc')) return false;
-    if (isTrimesterBlocked(plan, trimester)) return false;
+    if (isOnLeave(plan, trimester)) return false;
+    if (rplWfeAt(plan, trimester)) return false;
     if (plan.careerCatalystAt != null && plan.careerCatalystAt !== trimester) return false;
     if (plan.mc[trimester - 1]) return false;
     return true;
   }
 
   function canAssignMc(trimester, plan) {
-    if (isTrimesterBlocked(plan, trimester)) return false;
+    if (isOnLeave(plan, trimester)) return false;
     if (plan.careerCatalystAt === trimester) return false;
-    if (isOnReattempt(plan, trimester)) return false;
     return true;
   }
 
@@ -494,11 +598,32 @@
 
   function countMcBefore(plan, trimester) {
     let n = 0;
-    for (let t = 0; t < trimester - 1; t++) {
-      if (plan.mc[t]) n++;
-      else if (rplMcAt(plan, t + 1) && rplCreditsAt(plan, t + 1) >= (DATA.mcCredits || 18)) n++;
+    for (let t = 1; t < trimester; t++) {
+      const idx = t - 1;
+      if (
+        plan.mc[idx] ||
+        (plan.reattemptMc && plan.reattemptMc[idx]) ||
+        (plan.remoduleMc && plan.remoduleMc[idx])
+      ) {
+        n++;
+      } else if (rplMcAt(plan, t) && rplCreditsAt(plan, t) >= (DATA.mcCredits || 18)) {
+        n++;
+      }
     }
     return n;
+  }
+
+  function hasCareerCatalystCredit(plan) {
+    if (plan.careerCatalystAt != null) return true;
+    return (plan.rplWfe || []).some(Boolean);
+  }
+
+  function hasCareerCatalystBefore(plan, trimester) {
+    if (plan.careerCatalystAt != null && plan.careerCatalystAt < trimester) return true;
+    for (let t = 1; t < trimester; t++) {
+      if (rplWfeAt(plan, t)) return true;
+    }
+    return false;
   }
 
   function meetsRiwePrereq(plan, startTrimester) {
@@ -577,6 +702,7 @@
   }
 
   function isRiweActiveTrimester(plan, intakeKey, trimester) {
+    if (plan.riweAt == null) return false;
     return riweSpanTrimesters(plan, intakeKey).includes(trimester);
   }
 
@@ -619,14 +745,16 @@
     const capCal = capstoneTrimestersFor(plan, intakeKey, throughTrimester);
 
     for (let t = 1; t <= throughTrimester; t++) {
-      const sel = plan.mc[t - 1];
-      if (sel && !countedMc.has(sel)) {
+      const idx = t - 1;
+      [plan.mc, plan.reattemptMc, plan.remoduleMc].forEach((arr) => {
+        const sel = arr && arr[idx];
+        if (!sel || countedMc.has(sel)) return;
         const c = courseById(sel);
         if (c) {
           total += c.credits;
           countedMc.add(sel);
         }
-      }
+      });
       const rplCr = rplCreditsAt(plan, t);
       if (rplCr > 0) {
         const rplId = rplMcAt(plan, t);
@@ -645,6 +773,9 @@
       if (plan.careerCatalystAt === t && !ccCounted) {
         total += DATA.wfeCcCredits;
         ccCounted = true;
+      } else if (!ccCounted && rplWfeAt(plan, t)) {
+        total += rplWfeCredits();
+        ccCounted = true;
       }
       if (riweSpan.includes(t) && !isOnLeave(plan, t)) {
         total += riwePer;
@@ -661,12 +792,16 @@
   }
 
   function hasSelectionInTrimester(plan, intakeKey, trimester) {
-    if (plan.mc[trimester - 1]) return true;
+    const idx = trimester - 1;
+    if (plan.mc[idx]) return true;
+    if (plan.reattemptMc && plan.reattemptMc[idx]) return true;
+    if (plan.remoduleMc && plan.remoduleMc[idx]) return true;
     if (plan.careerCatalystAt === trimester) return true;
     if (isRiweActiveTrimester(plan, intakeKey, trimester)) return true;
     const capTs = capstoneTrimestersFor(plan, intakeKey, DATA.maxTotalTrimesters);
     if (plan.capstone && capTs.includes(trimester)) return true;
     if (rplCreditsAt(plan, trimester) > 0) return true;
+    if (rplWfeAt(plan, trimester)) return true;
     if (isOnLeave(plan, trimester)) return true;
     if (isOnReattempt(plan, trimester)) return true;
     if (isOnRemodule(plan, trimester)) return true;
@@ -720,7 +855,9 @@
     let mc = 0;
     let foundation = 0;
     let stackable = 0;
-    let wfeCc = plan.careerCatalystAt != null ? DATA.wfeCcCredits : 0;
+    let wfeCc = 0;
+    if (plan.careerCatalystAt != null) wfeCc = DATA.wfeCcCredits;
+    else if ((plan.rplWfe || []).some(Boolean)) wfeCc = rplWfeCredits();
     let riwe = 0;
     if (plan.riweAt != null) {
       const duration = (DATA.prerequisites.wfeRiwe && DATA.prerequisites.wfeRiwe.durationTrimesters) || 2;
@@ -729,11 +866,7 @@
     let capstone = plan.capstone ? DATA.capstoneCredits : 0;
     let rpl = 0;
 
-    plan.mc.forEach((sel) => {
-      if (!sel || countedMc.has(sel)) return;
-      const c = courseById(sel);
-      if (!c) return;
-      countedMc.add(sel);
+    addUniqueMcCredits(plan, countedMc, (c) => {
       mc += c.credits;
       if (isFoundation(c)) foundation += c.credits;
       else stackable += c.credits;
@@ -765,25 +898,49 @@
     return (DATA.componentAvailability && DATA.componentAvailability[kind]) || '';
   }
 
-  function applyReattempt(plan, trimester) {
+  function applyReattempt(plan, trimester, intakeKey) {
     if (trimester < 2) return false;
-    const prevId = plan.mc[trimester - 2];
+    const prevId = courseAtTrimester(plan, trimester - 1);
     if (!prevId) return false;
     if (countCourseAttempts(plan, prevId) >= 3) return false;
-    plan.mc[trimester - 1] = prevId;
+    if (!courseRetryTrimesters(intakeKey, prevId, DATA.maxTotalTrimesters).has(trimester)) return false;
+    if (!plan.reattemptMc) plan.reattemptMc = new Array(DATA.maxTotalTrimesters).fill(EMPTY);
+    plan.reattemptMc[trimester - 1] = prevId;
     return true;
+  }
+
+  function coursesForReattempt(plan, trimester, intakeKey) {
+    const used = usedCourseIds(plan, trimester);
+    const maxT = DATA.maxTotalTrimesters;
+    const candidates = new Set();
+    if (trimester >= 2) {
+      const prev = courseAtTrimester(plan, trimester - 1);
+      if (prev) candidates.add(prev);
+    }
+    allScheduledCourseEntries(plan).forEach(({ trimester: t, id }) => {
+      if (t < trimester) candidates.add(id);
+    });
+    return [...candidates]
+      .map((id) => courseById(id))
+      .filter((c) => {
+        if (!c) return false;
+        if (used.has(c.id) && plan.reattemptMc[trimester - 1] !== c.id) return false;
+        if (countCourseAttempts(plan, c.id) >= 3) return false;
+        return courseRetryTrimesters(intakeKey, c.id, maxT).has(trimester);
+      });
   }
 
   function coursesForRemodule(plan, trimester, intakeKey) {
     const seen = uniqueMcIds(plan);
     const used = usedCourseIds(plan, trimester);
+    const maxT = DATA.maxTotalTrimesters;
     return [...seen]
       .map((id) => courseById(id))
       .filter((c) => {
         if (!c) return false;
-        if (used.has(c.id) && plan.mc[trimester - 1] !== c.id) return false;
+        if (used.has(c.id) && plan.remoduleMc[trimester - 1] !== c.id) return false;
         if (countCourseAttempts(plan, c.id) >= 3) return false;
-        return true;
+        return courseRetryTrimesters(intakeKey, c.id, maxT).has(trimester);
       });
   }
 
@@ -802,20 +959,18 @@
     const uniqueIds = uniqueMcIds(plan);
     const attemptTotals = {};
 
-    plan.mc.forEach((sel, i) => {
-      if (!sel) return;
-      const t = i + 1;
-      attemptTotals[sel] = (attemptTotals[sel] || 0) + 1;
-      if (isTrimesterBlocked(plan, t) && !isOnReattempt(plan, t) && !isOnRemodule(plan, t)) {
-        const c = courseById(sel);
+    allScheduledCourseEntries(plan).forEach(({ trimester: t, id, slot }) => {
+      attemptTotals[id] = (attemptTotals[id] || 0) + 1;
+      if (isOnLeave(plan, t)) {
+        const c = courseById(id);
         issues.push({
           type: 'error',
-          msg: `Trimester ${t}: cannot assign ${c ? c.name : 'a micro-credential'} during leave.`,
+          msg: `Trimester ${t}: cannot assign ${c ? c.name : 'a micro-credential'} during leave (${slot}).`,
         });
         return;
       }
-      if (plan.careerCatalystAt === t) {
-        const c = courseById(sel);
+      if (plan.careerCatalystAt === t && slot === 'mc') {
+        const c = courseById(id);
         issues.push({
           type: 'error',
           msg: `Trimester ${t}: ${c ? c.name : 'Micro-credential'} cannot be taken in the same trimester as ${ccName}.`,
@@ -823,18 +978,34 @@
         return;
       }
       const month = monthForTrimester(intakeKey, t);
-      const c = courseById(sel);
+      const c = courseById(id);
       if (!c) {
-        issues.push({ type: 'error', msg: `Trimester ${t}: unknown selection.` });
+        issues.push({ type: 'error', msg: `Trimester ${t}: unknown selection (${slot}).` });
         return;
       }
-      if (!isCourseOfferedInTrimester(intakeKey, t, c.id) && !isOnReattempt(plan, t) && !isOnRemodule(plan, t)) {
+      if (slot === 'mc' && !isCourseOfferedInTrimester(intakeKey, t, c.id)) {
         issues.push({
           type: 'error',
           msg: `Trimester ${t} (${month}): ${c.name} is not offered this trimester.`,
         });
       }
+      if ((slot === 'reattempt' || slot === 'remodule') && !courseRetryTrimesters(intakeKey, c.id, DATA.maxTotalTrimesters).has(t)) {
+        issues.push({
+          type: 'error',
+          msg: `Trimester ${t}: ${c.name} ${slot} is only allowed in the ${reattemptOfferWindow()} trimesters when that course is offered.`,
+        });
+      }
     });
+
+    for (let t = 1; t <= DATA.maxTotalTrimesters; t++) {
+      const load = trimesterActivityCredits(plan, intakeKey, t);
+      if (load > rplMaxPerTrimester()) {
+        issues.push({
+          type: 'error',
+          msg: `Trimester ${t}: ${load} credits scheduled (max ${rplMaxPerTrimester()} per trimester).`,
+        });
+      }
+    }
 
     Object.entries(attemptTotals).forEach(([id, n]) => {
       if (n > 3) {
@@ -855,12 +1026,13 @@
     });
 
     if (hasFeature('wfeCc')) {
-      if (plan.careerCatalystAt != null) {
-        if (isOnLeave(plan, plan.careerCatalystAt)) {
-          issues.push({ type: 'error', msg: `${ccName} cannot be scheduled on a leave trimester.` });
-        }
-      } else {
-        issues.push({ type: 'warn', msg: `${ccName} not yet scheduled.` });
+      if (!hasCareerCatalystCredit(plan)) {
+        issues.push({ type: 'warn', msg: `${ccName} not yet scheduled (or WFE RPL).` });
+      } else if (plan.careerCatalystAt != null && isOnLeave(plan, plan.careerCatalystAt)) {
+        issues.push({ type: 'error', msg: `${ccName} cannot be scheduled on a leave trimester.` });
+      }
+      if (plan.careerCatalystAt != null && (plan.rplWfe || []).some(Boolean)) {
+        issues.push({ type: 'error', msg: `${ccName} cannot combine scheduled CC with WFE RPL.` });
       }
     }
 
@@ -880,16 +1052,16 @@
     }
 
     if (hasFeature('rpl')) {
+      if (totalRplCredits(plan) > rplMaxTotalCredits()) {
+        issues.push({
+          type: 'error',
+          msg: `Total RPL ${totalRplCredits(plan)} credits exceeds maximum ${rplMaxTotalCredits()}.`,
+        });
+      }
       (plan.rplCredits || []).forEach((cr, i) => {
         const t = i + 1;
         const credits = cr || 0;
         if (credits <= 0) return;
-        if (credits > rplMaxPerTrimester()) {
-          issues.push({
-            type: 'error',
-            msg: `Trimester ${t}: RPL exceeds ${rplMaxPerTrimester()} credits per trimester.`,
-          });
-        }
         if (credits >= (DATA.mcCredits || 18)) {
           const id = plan.rplMc && plan.rplMc[i];
           if (!id) {
@@ -897,7 +1069,7 @@
               type: 'warn',
               msg: `Trimester ${t}: RPL ${credits} cr — select exempted micro-credential.`,
             });
-          } else if (plan.mc.filter((m) => m === id).length > 0) {
+          } else if (allScheduledCourseEntries(plan).some((e) => e.id === id)) {
             const c = courseById(id);
             issues.push({
               type: 'error',
@@ -925,8 +1097,9 @@
     const foundationRequired = Object.values(DATA.foundationSlots || {});
     if (foundationRequired.length && counts.foundation > 0) {
       const scheduledNames = new Set(
-        [...plan.mc.filter(Boolean), ...(plan.rplMc || []).filter(Boolean)]
-          .map((id) => courseById(id)?.name)
+        allScheduledCourseEntries(plan)
+          .map(({ id }) => courseById(id)?.name)
+          .concat((plan.rplMc || []).filter(Boolean).map((id) => courseById(id)?.name))
           .filter(Boolean)
       );
       const missing = foundationRequired.filter((name) => !scheduledNames.has(name));
@@ -1023,7 +1196,7 @@
     const ready =
       errors.length === 0 &&
       counts.mc === DATA.mcCount &&
-      (!hasFeature('wfeCc') || plan.careerCatalystAt != null) &&
+      (!hasFeature('wfeCc') || hasCareerCatalystCredit(plan)) &&
       (!hasFeature('riwe') || plan.riweAt != null) &&
       (!hasFeature('capstone') || plan.capstone) &&
       breakdown.total === DATA.totalCredits;
@@ -1082,8 +1255,11 @@
       leave: noDelays.leave,
       reattempt: noDelays.reattempt,
       remodule: noDelays.remodule,
+      reattemptMc: new Array(DATA.maxTotalTrimesters).fill(EMPTY),
+      remoduleMc: new Array(DATA.maxTotalTrimesters).fill(EMPTY),
       rplCredits: new Array(DATA.maxTotalTrimesters).fill(0),
       rplMc: new Array(DATA.maxTotalTrimesters).fill(null),
+      rplWfe: new Array(DATA.maxTotalTrimesters).fill(false),
     };
   }
 
@@ -1323,7 +1499,18 @@
     isTrimesterBlocked,
     countCourseAttempts,
     applyReattempt,
+    coursesForReattempt,
     coursesForRemodule,
+    courseAtTrimester,
+    courseRetryTrimesters,
+    trimesterActivityCredits,
+    totalRplCredits,
+    rplMaxTotalCredits,
+    rplWfeCredits,
+    rplWfeAt,
+    cycleRplWfe,
+    hasCareerCatalystCredit,
+    isOnLeaveOnly,
     suggestedExtensionTrimesters,
     allVisibleTrimestersOccupied,
     componentAvailability,

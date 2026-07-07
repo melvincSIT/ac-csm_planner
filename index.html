@@ -1586,6 +1586,7 @@
     .tile.wfe_cc { background: var(--wfe-bg); color: var(--wfe); border-color: var(--wfe); }
     .tile.riwe { background: var(--riwe-bg); color: var(--riwe); border-color: var(--riwe); }
     .tile.capstone { background: var(--capstone-bg); color: var(--capstone); border-color: var(--capstone); }
+    .tile.capstone.selected { border-style: solid; border-width: 2px; box-shadow: 0 0 0 1px var(--capstone); }
     .tile.leave { background: var(--leave-tile-bg); color: var(--muted); border-color: var(--leave-tile-border); border-style: dashed; }
     .tile.leave.selected { background: var(--leave-tile-selected); color: var(--text); border-style: solid; }
     .tile.leave.compact {
@@ -1772,7 +1773,7 @@
     .catalog-card.wfe_cc { border-color: var(--wfe); background: var(--wfe-bg); color: var(--wfe); }
     .catalog-card.riwe { border-color: var(--riwe); background: var(--riwe-bg); color: var(--riwe); }
     .catalog-card.capstone { border-color: var(--capstone); background: var(--capstone-bg); color: var(--capstone); }
-    .catalog-view-available .catalog-card.selected,
+    .catalog-view-available .catalog-card.selected:not(.wfe_cc):not(.riwe):not(.capstone),
     .catalog-view-selected .catalog-card:not(.selected) {
       background: var(--surface-muted);
       color: var(--muted);
@@ -1780,12 +1781,15 @@
       opacity: 0.58;
       font-weight: 500;
     }
-    [data-theme="dark"] .catalog-view-available .catalog-card.selected,
+    [data-theme="dark"] .catalog-view-available .catalog-card.selected:not(.wfe_cc):not(.riwe):not(.capstone),
     [data-theme="dark"] .catalog-view-selected .catalog-card:not(.selected) {
       opacity: 0.78;
     }
     .catalog-view-available .catalog-card:not(.selected),
-    .catalog-view-selected .catalog-card.selected {
+    .catalog-view-selected .catalog-card.selected,
+    .catalog-view-available .catalog-card.selected.wfe_cc,
+    .catalog-view-available .catalog-card.selected.riwe,
+    .catalog-view-available .catalog-card.selected.capstone {
       opacity: 1;
       font-weight: 700;
     }
@@ -2144,8 +2148,8 @@
       </div>
     </dialog>
 
-  <script src="data-embed.js?v=5"></script>
-  <script src="planner.js?v=5"></script>
+  <script src="data-embed.js?v=6"></script>
+  <script src="planner.js?v=6"></script>
   <script>
     let data, plan, intakeKey, startYear, programId;
     let creditsWereComplete = false;
@@ -2398,6 +2402,24 @@
       while (plan.rplMc.length < data.maxTotalTrimesters) {
         plan.rplMc.push(null);
       }
+      if (!plan.reattemptMc) {
+        plan.reattemptMc = new Array(data.maxTotalTrimesters).fill(CSMPlanner.EMPTY);
+      }
+      if (!plan.remoduleMc) {
+        plan.remoduleMc = new Array(data.maxTotalTrimesters).fill(CSMPlanner.EMPTY);
+      }
+      if (!plan.rplWfe) {
+        plan.rplWfe = new Array(data.maxTotalTrimesters).fill(false);
+      }
+      while (plan.reattemptMc.length < data.maxTotalTrimesters) {
+        plan.reattemptMc.push(CSMPlanner.EMPTY);
+      }
+      while (plan.remoduleMc.length < data.maxTotalTrimesters) {
+        plan.remoduleMc.push(CSMPlanner.EMPTY);
+      }
+      while (plan.rplWfe.length < data.maxTotalTrimesters) {
+        plan.rplWfe.push(false);
+      }
     }
 
     function applyAutoExtension() {
@@ -2425,6 +2447,8 @@
     function clearTrimesterAssignments(trimester) {
       const idx = trimester - 1;
       plan.mc[idx] = CSMPlanner.EMPTY;
+      if (plan.reattemptMc) plan.reattemptMc[idx] = CSMPlanner.EMPTY;
+      if (plan.remoduleMc) plan.remoduleMc[idx] = CSMPlanner.EMPTY;
       if (plan.careerCatalystAt === trimester) plan.careerCatalystAt = null;
       if (plan.riweAt != null && CSMPlanner.isRiweActiveTrimester(plan, intakeKey, trimester)) {
         plan.riweAt = null;
@@ -2433,6 +2457,7 @@
         plan.rplCredits[idx] = 0;
         plan.rplMc[idx] = null;
       }
+      if (plan.rplWfe) plan.rplWfe[idx] = false;
     }
 
     function maxTrimestersVisible() {
@@ -2685,6 +2710,14 @@ ${cloneExportContent()}
           const info = CSMPlanner.selectionLabel(mc);
           parts.push(info.name);
         }
+        const ra = plan.reattemptMc && plan.reattemptMc[t - 1];
+        if (ra && plan.reattempt && plan.reattempt[t - 1]) {
+          parts.push(`Reattempt: ${CSMPlanner.selectionLabel(ra)?.name || ra}`);
+        }
+        const rm = plan.remoduleMc && plan.remoduleMc[t - 1];
+        if (rm && plan.remodule && plan.remodule[t - 1]) {
+          parts.push(`Remodule: ${CSMPlanner.selectionLabel(rm)?.name || rm}`);
+        }
         if (plan.careerCatalystAt === t && CSMPlanner.hasFeature('wfeCc')) {
           parts.push(CSMPlanner.componentName('wfe_cc'));
         }
@@ -2775,32 +2808,40 @@ ${cloneExportContent()}
     function toggleLeave(trimester) {
       const idx = trimester - 1;
       const next = !plan.leave[idx];
-      clearTrimesterModes(idx, next ? 'leave' : null);
-      plan.leave[idx] = next;
-      if (next) clearTrimesterAssignments(trimester);
+      if (next) {
+        plan.leave[idx] = true;
+        plan.reattempt[idx] = false;
+        plan.remodule[idx] = false;
+        clearTrimesterAssignments(trimester);
+      } else {
+        plan.leave[idx] = false;
+      }
       render();
     }
 
     function toggleReattempt(trimester) {
       const idx = trimester - 1;
+      if (CSMPlanner.isOnLeave(plan, trimester)) return;
       const next = !plan.reattempt[idx];
-      clearTrimesterModes(idx, next ? 'reattempt' : null);
       plan.reattempt[idx] = next;
-      plan.mc[idx] = CSMPlanner.EMPTY;
       if (next) {
-        if (!CSMPlanner.applyReattempt(plan, trimester)) {
+        if (!CSMPlanner.applyReattempt(plan, trimester, intakeKey)) {
           plan.reattempt[idx] = false;
         }
+      } else if (plan.reattemptMc) {
+        plan.reattemptMc[idx] = CSMPlanner.EMPTY;
       }
       render();
     }
 
     function toggleRemodule(trimester) {
       const idx = trimester - 1;
+      if (CSMPlanner.isOnLeave(plan, trimester)) return;
       const next = !plan.remodule[idx];
-      clearTrimesterModes(idx, next ? 'remodule' : null);
       plan.remodule[idx] = next;
-      plan.mc[idx] = CSMPlanner.EMPTY;
+      if (!next && plan.remoduleMc) {
+        plan.remoduleMc[idx] = CSMPlanner.EMPTY;
+      }
       render();
     }
 
@@ -3429,18 +3470,57 @@ ${cloneExportContent()}
       td.className = 'cell';
       const grid = document.createElement('div');
       grid.className = 'tile-grid';
+      const idx = trimester - 1;
+
+      if (CSMPlanner.isOnLeave(plan, trimester)) {
+        appendEmptySlot(grid, 'On leave');
+        td.appendChild(grid);
+        finishTriCell(td, trimester, ayGroups);
+        return td;
+      }
+
       const on = CSMPlanner.isOnReattempt(plan, trimester);
-      const tile = makeTile(on ? 'Reattempt' : 'Reattempt', 'reattempt', on);
-      tile.classList.add('compact');
-      if (!on) tile.classList.add('option');
-      tile.title = on
-        ? 'Reattempt active — repeats previous trimester module (click to clear)'
-        : trimester < 2
-          ? 'Reattempt needs a prior trimester with a module'
-          : 'Mark reattempt — repeats previous trimester module (max 3 attempts)';
-      if (trimester >= 2) tile.addEventListener('click', () => toggleReattempt(trimester));
-      else tile.classList.add('slot-muted');
-      grid.appendChild(tile);
+      const current = plan.reattemptMc && plan.reattemptMc[idx];
+      if (on && current) {
+        const info = CSMPlanner.selectionLabel(current);
+        const tile = makeTile(info.name, info.kind, true);
+        tile.classList.add('reattempt');
+        addTileSticker(tile, reattemptStickerLabel(current), 'reattempt');
+        tile.title = `${info.name} — reattempt — click to remove`;
+        tile.addEventListener('click', () => {
+          plan.reattemptMc[idx] = CSMPlanner.EMPTY;
+          plan.reattempt[idx] = false;
+          render();
+        });
+        grid.appendChild(tile);
+      } else if (on) {
+        const options = CSMPlanner.coursesForReattempt(plan, trimester, intakeKey);
+        if (!options.length) {
+          appendEmptySlot(grid, 'No reattempt options in offering window');
+        } else {
+          options.forEach((c) => {
+            const tile = makeTile(c.name, c.category, false);
+            tile.classList.add('option', 'tile-compact', 'reattempt');
+            tile.title = `${c.name} — reattempt — click to schedule`;
+            tile.addEventListener('click', () => {
+              plan.reattemptMc[idx] = c.id;
+              render();
+            });
+            grid.appendChild(tile);
+          });
+        }
+      } else {
+        const tile = makeTile('Reattempt', 'reattempt', false);
+        tile.classList.add('compact', 'option');
+        tile.title =
+          trimester < 2
+            ? 'Reattempt needs a prior trimester with a module'
+            : 'Mark reattempt — repeat a module (offering window only)';
+        if (trimester >= 2) tile.addEventListener('click', () => toggleReattempt(trimester));
+        else tile.classList.add('slot-muted');
+        grid.appendChild(tile);
+      }
+
       td.appendChild(grid);
       finishTriCell(td, trimester, ayGroups);
       return td;
@@ -3451,15 +3531,51 @@ ${cloneExportContent()}
       td.className = 'cell';
       const grid = document.createElement('div');
       grid.className = 'tile-grid';
+      const idx = trimester - 1;
+
+      if (CSMPlanner.isOnLeave(plan, trimester)) {
+        appendEmptySlot(grid, 'On leave');
+        td.appendChild(grid);
+        finishTriCell(td, trimester, ayGroups);
+        return td;
+      }
+
       const on = CSMPlanner.isOnRemodule(plan, trimester);
-      const tile = makeTile(on ? 'Remodule' : 'Remodule', 'remodule', on);
-      tile.classList.add('compact');
-      if (!on) tile.classList.add('option');
-      tile.title = on
-        ? 'Remodule active — choose a prior module to repeat (click to clear)'
-        : 'Mark remodule — repeat a module taken earlier (max 3 attempts)';
-      tile.addEventListener('click', () => toggleRemodule(trimester));
-      grid.appendChild(tile);
+      const current = plan.remoduleMc && plan.remoduleMc[idx];
+      if (on && current) {
+        const info = CSMPlanner.selectionLabel(current);
+        const tile = makeTile(info.name, info.kind, true);
+        tile.classList.add('remodule');
+        tile.title = `${info.name} — remodule — click to remove`;
+        tile.addEventListener('click', () => {
+          plan.remoduleMc[idx] = CSMPlanner.EMPTY;
+          render();
+        });
+        grid.appendChild(tile);
+      } else if (on) {
+        const options = CSMPlanner.coursesForRemodule(plan, trimester, intakeKey);
+        if (!options.length) {
+          appendEmptySlot(grid, 'No remodule options in offering window');
+        } else {
+          options.forEach((c) => {
+            const tile = makeTile(c.name, c.category, false);
+            tile.classList.add('option', 'tile-compact', 'remodule');
+            tile.title = `${c.name} — remodule — click to schedule`;
+            tile.addEventListener('click', () => {
+              plan.remoduleMc[idx] = c.id;
+              render();
+            });
+            grid.appendChild(tile);
+          });
+        }
+      } else {
+        const tile = makeTile('Remodule', 'remodule', false);
+        tile.classList.add('compact', 'option');
+        tile.title = 'Mark remodule — repeat a prior module (offering window only)';
+        tile.addEventListener('click', () => toggleRemodule(trimester));
+        grid.appendChild(tile);
+      }
+
       td.appendChild(grid);
       finishTriCell(td, trimester, ayGroups);
       return td;
@@ -3492,16 +3608,18 @@ ${cloneExportContent()}
       const idx = trimester - 1;
       const credits = CSMPlanner.rplCreditsAt(plan, trimester);
       const mcId = CSMPlanner.rplMcAt(plan, trimester);
+      const wfeOn = CSMPlanner.rplWfeAt(plan, trimester);
       const maxCr = CSMPlanner.rplMaxPerTrimester();
+      const ccName = CSMPlanner.componentName('wfe_cc');
 
       if (credits > 0) {
-        let label = `RPL\n${credits} cr`;
+        let label = `MC\n${credits} cr`;
         if (mcId && credits >= (data.mcCredits || 18)) {
           const info = CSMPlanner.selectionLabel(mcId);
-          if (info) label = `RPL\n${info.name.split(' ')[0]}`;
+          if (info) label = `MC\n${info.name.split(' ')[0]}`;
         }
         const tile = makeTile(label, 'rpl', true);
-        tile.title = `RPL: ${credits} credits (max ${maxCr}/trimester) — click to cycle amount`;
+        tile.title = `MC RPL: ${credits} cr (steps of 3, max 18) — click to cycle`;
         tile.addEventListener('click', () => {
           plan.rplCredits[idx] = CSMPlanner.cycleRplCredits(credits);
           if (plan.rplCredits[idx] < (data.mcCredits || 18)) plan.rplMc[idx] = null;
@@ -3521,15 +3639,29 @@ ${cloneExportContent()}
           grid.appendChild(pickBtn);
         }
       } else {
-        const tile = makeTile('RPL', 'rpl', false);
+        const tile = makeTile('MC RPL', 'rpl', false);
         tile.classList.add('option', 'compact');
-        tile.title = `Recognition of Prior Learning — click to add (max ${maxCr} cr/trimester)`;
+        tile.title = `MC RPL — click to add (3–18 cr, steps of 3)`;
         tile.addEventListener('click', () => {
           plan.rplCredits[idx] = CSMPlanner.cycleRplCredits(0);
           render();
         });
         grid.appendChild(tile);
       }
+
+      const wfeTile = makeTile(wfeOn ? 'WFE 10' : 'WFE RPL', 'rpl', wfeOn);
+      wfeTile.classList.add('compact');
+      if (!wfeOn) wfeTile.classList.add('option');
+      wfeTile.title = wfeOn
+        ? `${ccName} RPL (10 cr) — click to remove`
+        : `Add ${ccName} RPL (10 cr)`;
+      wfeTile.addEventListener('click', () => {
+        if (plan.careerCatalystAt != null) return;
+        plan.rplWfe[idx] = CSMPlanner.cycleRplWfe(wfeOn);
+        render();
+      });
+      if (plan.careerCatalystAt != null) wfeTile.classList.add('slot-muted');
+      grid.appendChild(wfeTile);
 
       td.appendChild(grid);
       finishTriCell(td, trimester, ayGroups);
@@ -3544,60 +3676,6 @@ ${cloneExportContent()}
 
       if (CSMPlanner.isOnLeave(plan, trimester)) {
         appendEmptySlot(grid, 'On leave — no micro-credential this trimester');
-        td.appendChild(grid);
-        finishTriCell(td, trimester, ayGroups);
-        return td;
-      }
-
-      if (CSMPlanner.isOnReattempt(plan, trimester)) {
-        const current = plan.mc[trimester - 1];
-        if (current) {
-          const info = CSMPlanner.selectionLabel(current);
-          const tile = makeTile(info.name, info.kind, true);
-          addTileSticker(tile, reattemptStickerLabel(current), 'reattempt');
-          tile.title = `${info.name} — reattempt — click to remove`;
-          tile.addEventListener('click', () => {
-            plan.mc[trimester - 1] = CSMPlanner.EMPTY;
-            plan.reattempt[trimester - 1] = false;
-            render();
-          });
-          grid.appendChild(tile);
-        } else {
-          appendEmptySlot(grid, 'Reattempt — previous trimester needs a module');
-        }
-        td.appendChild(grid);
-        finishTriCell(td, trimester, ayGroups);
-        return td;
-      }
-
-      if (CSMPlanner.isOnRemodule(plan, trimester)) {
-        const current = plan.mc[trimester - 1];
-        if (current) {
-          const info = CSMPlanner.selectionLabel(current);
-          const tile = makeTile(info.name, info.kind, true);
-          tile.title = `${info.name} — remodule — click to remove`;
-          tile.addEventListener('click', () => {
-            plan.mc[trimester - 1] = CSMPlanner.EMPTY;
-            render();
-          });
-          grid.appendChild(tile);
-        } else {
-          const options = CSMPlanner.coursesForRemodule(plan, trimester, intakeKey);
-          if (!options.length) {
-            appendEmptySlot(grid, 'No modules available to remodule');
-          } else {
-            options.forEach((c) => {
-              const tile = makeTile(c.name, c.category, false);
-              tile.classList.add('option', 'tile-compact');
-              tile.title = `${c.name} — remodule — click to schedule`;
-              tile.addEventListener('click', () => {
-                plan.mc[trimester - 1] = c.id;
-                render();
-              });
-              grid.appendChild(tile);
-            });
-          }
-        }
         td.appendChild(grid);
         finishTriCell(td, trimester, ayGroups);
         return td;
@@ -3836,8 +3914,9 @@ ${cloneExportContent()}
     }
 
     function isCourseOnReattemptTrimester(courseId) {
-      for (let i = 0; i < plan.mc.length; i++) {
-        if (plan.mc[i] === courseId && plan.reattempt && plan.reattempt[i]) return true;
+      if (!plan.reattemptMc) return false;
+      for (let i = 0; i < plan.reattemptMc.length; i++) {
+        if (plan.reattemptMc[i] === courseId && plan.reattempt && plan.reattempt[i]) return true;
       }
       return false;
     }
@@ -3856,11 +3935,16 @@ ${cloneExportContent()}
     }
 
     function renderCatalog() {
-      const selected = new Set(plan.mc.filter(Boolean));
+      const selected = new Set();
+      [plan.mc, plan.reattemptMc, plan.remoduleMc].forEach((arr) => {
+        (arr || []).forEach((id) => {
+          if (id) selected.add(id);
+        });
+      });
       (plan.rplMc || []).forEach((id, i) => {
         if (id && CSMPlanner.rplCreditsAt(plan, i + 1) >= (data.mcCredits || 18)) selected.add(id);
       });
-      const hasCc = plan.careerCatalystAt != null;
+      const hasCc = CSMPlanner.hasCareerCatalystCredit(plan);
       const hasRiwe = plan.riweAt != null;
       const groups = CSMPlanner.coursesGrouped();
       const labels = data.catalogLabels || {
