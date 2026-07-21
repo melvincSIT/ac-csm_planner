@@ -1029,6 +1029,118 @@
       border-radius: 5px;
       transition: width 0.25s ease;
     }
+    .path-journey-wrap {
+      margin: 0.65rem 0 0.15rem;
+      padding: 0.55rem 0.35rem 0.45rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-muted);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .path-journey {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      min-width: min-content;
+      padding: 0.15rem 0.25rem;
+    }
+    .path-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 0 0 auto;
+      min-width: 4.5rem;
+      max-width: 6.5rem;
+      text-align: center;
+      position: relative;
+    }
+    .path-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 0.72rem;
+      left: calc(50% + 0.55rem);
+      width: calc(100% - 1.1rem);
+      height: 2px;
+      background: var(--border);
+      z-index: 0;
+    }
+    .path-step.done:not(:last-child)::after {
+      background: var(--foundation);
+      opacity: 0.55;
+    }
+    .path-step-marker {
+      width: 1.35rem;
+      height: 1.35rem;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.62rem;
+      font-weight: 700;
+      line-height: 1;
+      z-index: 1;
+      flex-shrink: 0;
+    }
+    .path-step.done .path-step-marker {
+      border-color: var(--foundation);
+      background: var(--foundation);
+      color: #fff;
+    }
+    .path-step.active .path-step-marker {
+      border-color: var(--wfe);
+      box-shadow: 0 0 0 3px rgba(42, 122, 184, 0.22);
+    }
+    [data-theme="dark"] .path-step.active .path-step-marker {
+      box-shadow: 0 0 0 3px rgba(74, 159, 212, 0.28);
+    }
+    .path-step-label {
+      margin-top: 0.28rem;
+      font-size: 0.58rem;
+      font-weight: 600;
+      line-height: 1.15;
+      color: var(--text);
+    }
+    .path-step-progress {
+      margin-top: 0.12rem;
+      font-size: 0.52rem;
+      font-weight: 500;
+      color: var(--muted);
+      line-height: 1.1;
+    }
+    .path-step.active .path-step-label {
+      color: var(--wfe);
+    }
+    .path-step.pending .path-step-label,
+    .path-step.pending .path-step-progress {
+      opacity: 0.72;
+    }
+    .timeline-advanced-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      margin: 0.35rem 0 0.15rem;
+      flex-wrap: wrap;
+    }
+    button.toolbar-btn-subtle {
+      font-size: 0.72rem;
+      padding: 0.28rem 0.55rem;
+      opacity: 0.88;
+    }
+    .advanced-hint {
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+    .timeline-advanced-section {
+      border-top: 1px dashed var(--border);
+    }
+    .timeline-advanced-section .row-label {
+      font-size: 0.62rem;
+      opacity: 0.88;
+    }
     .credit-stats {
       display: flex;
       align-items: stretch;
@@ -2098,7 +2210,12 @@
           </div>
         </div>
       </div>
+      <div class="path-journey-wrap" id="pathJourney" aria-label="Programme completion path"></div>
       <h2 class="section-title timeline-schedule-title">Timeline</h2>
+      <div class="timeline-advanced-bar" id="timelineAdvancedBar">
+        <button type="button" class="toolbar-btn toolbar-btn-subtle" id="advancedRowsToggle">Advanced options</button>
+        <span class="advanced-hint" id="advancedRowsHint" hidden>Leave, re-attempt, or RPL in use</span>
+      </div>
       <p class="section-lead" id="timelineLead">Choose when to study each micro-credential, Career Catalyst, RIWE, and Capstone across trimesters.</p>
       <div class="timeline-table-panel" id="timelineTablePanel">
         <div class="timeline-scroll-hints" id="timelineScrollHints" hidden>
@@ -2167,8 +2284,8 @@
       </div>
     </dialog>
 
-  <script src="data-embed.js?v=9"></script>
-  <script src="planner.js?v=9"></script>
+  <script src="data-embed.js?v=10"></script>
+  <script src="planner.js?v=10"></script>
   <script>
     let data, plan, intakeKey, startYear, programId;
     let creditsWereComplete = false;
@@ -2180,6 +2297,8 @@
     const INTAKE_ORDER = ['sep', 'jan', 'may'];
     const INTAKE_LABELS = { sep: 'September', jan: 'January', may: 'May' };
     const PROGRAM_KEY = 'csm-planner-program';
+    const ADVANCED_ROWS_KEY = 'csm-planner-advanced-rows';
+    let showAdvancedRowsPref = localStorage.getItem(ADVANCED_ROWS_KEY) === 'true';
 
     function getYearOptions() {
       const years = [];
@@ -3074,6 +3193,12 @@ ${cloneExportContent()}
       document.getElementById('programmeDuration').addEventListener('change', () => {
         render();
       });
+      document.getElementById('advancedRowsToggle').addEventListener('click', () => {
+        if (planUsesAdvancedRows()) return;
+        showAdvancedRowsPref = !showAdvancedRowsPref;
+        localStorage.setItem(ADVANCED_ROWS_KEY, showAdvancedRowsPref ? 'true' : 'false');
+        render();
+      });
       document.getElementById('clearBtn').addEventListener('click', () => {
         plan = CSMPlanner.emptyPlan();
         creditsWereComplete = false;
@@ -3290,6 +3415,65 @@ ${cloneExportContent()}
       return cards.join('');
     }
 
+    function planUsesAdvancedRows() {
+      if ((plan.leave || []).some(Boolean)) return true;
+      if (CSMPlanner.hasFeature('reattempt') && (plan.reattempt || []).some(Boolean)) return true;
+      if (CSMPlanner.hasFeature('remodule') && (plan.remodule || []).some(Boolean)) return true;
+      if (CSMPlanner.hasFeature('rpl')) {
+        if ((plan.rplCredits || []).some((cr) => cr > 0)) return true;
+        if ((plan.rplWfe || []).some(Boolean)) return true;
+      }
+      return false;
+    }
+
+    function shouldShowAdvancedRows() {
+      return planUsesAdvancedRows() || showAdvancedRowsPref;
+    }
+
+    function updateAdvancedBar() {
+      const btn = document.getElementById('advancedRowsToggle');
+      const hint = document.getElementById('advancedRowsHint');
+      if (!btn) return;
+      const inUse = planUsesAdvancedRows();
+      const visible = shouldShowAdvancedRows();
+      btn.textContent = visible ? 'Hide advanced options' : 'Advanced options';
+      btn.hidden = inUse;
+      if (hint) {
+        hint.hidden = !inUse;
+        hint.textContent = 'Leave, re-attempt, or RPL in use — advanced rows shown';
+      }
+    }
+
+    function renderPathJourney() {
+      const el = document.getElementById('pathJourney');
+      if (!el) return;
+      const steps = CSMPlanner.programmePathMilestones(plan, intakeKey);
+      el.innerHTML =
+        '<div class="path-journey" role="list">' +
+        steps
+          .map((step) => {
+            const marker =
+              step.status === 'done'
+                ? '✓'
+                : step.status === 'active'
+                  ? '●'
+                  : String(steps.indexOf(step) + 1);
+            const triHint =
+              step.trimester != null
+                ? ` · Tri ${step.trimester}`
+                : '';
+            return (
+              `<div class="path-step ${step.status}" role="listitem" title="${escapeHtml(step.label)}: ${escapeHtml(step.progress)}${triHint}">` +
+              `<span class="path-step-marker" aria-hidden="true">${marker}</span>` +
+              `<span class="path-step-label">${escapeHtml(step.label)}</span>` +
+              `<span class="path-step-progress">${escapeHtml(step.progress)}${triHint ? escapeHtml(triHint) : ''}</span>` +
+              `</div>`
+            );
+          })
+          .join('') +
+        '</div>';
+    }
+
     function render() {
       ensurePlanShape();
       CSMPlanner.sanitizePlanSchedule(plan, intakeKey);
@@ -3320,6 +3504,8 @@ ${cloneExportContent()}
         </div>`;
       document.getElementById('creditStats').innerHTML = buildCreditStatsHtml(bd, analysis);
 
+      renderPathJourney();
+      updateAdvancedBar();
       renderTimeline(maxT, intake, analysis);
       renderCatalog();
       renderIssues(analysis);
@@ -3332,22 +3518,6 @@ ${cloneExportContent()}
 
       const body = document.getElementById('timelineBody');
       body.innerHTML = '';
-
-      const cumRow = document.createElement('tr');
-      cumRow.innerHTML = '<td class="row-label">Cumulative\ncredits</td>';
-      appendTriColumns(cumRow, maxT, (t) => {
-        const td = document.createElement('td');
-        td.className = 'cum-cell';
-        if (CSMPlanner.showCumulativeAtTrimester(plan, intakeKey, t, maxT)) {
-          const cum = CSMPlanner.cumulativeCredits(plan, intakeKey, t);
-          if (cum >= data.totalCredits) td.classList.add('milestone');
-          td.textContent = String(cum);
-          td.title = `Total credits earned through ${CSMPlanner.trimesterLabel(intakeKey, t, startYear)}`;
-        }
-        finishTriCell(td, t, ayGroups);
-        return td;
-      });
-      body.appendChild(cumRow);
 
       const mcRow = document.createElement('tr');
       mcRow.innerHTML = '<td class="row-label">Micro-\ncredential</td>';
@@ -3377,30 +3547,53 @@ ${cloneExportContent()}
         body.appendChild(buildCapstoneRow(intake, maxT, ayGroups));
       }
 
-      const leaveRow = document.createElement('tr');
-      leaveRow.className = 'leave-row';
-      leaveRow.innerHTML = '<td class="row-label">Leave of<br>Absence</td>';
-      appendTriColumns(leaveRow, maxT, (t) => buildLeaveCell(t, ayGroups));
-      body.appendChild(leaveRow);
+      if (shouldShowAdvancedRows()) {
+        const cumRow = document.createElement('tr');
+        cumRow.className = 'timeline-advanced-section';
+        cumRow.innerHTML = '<td class="row-label">Cumulative\ncredits</td>';
+        appendTriColumns(cumRow, maxT, (t) => {
+          const td = document.createElement('td');
+          td.className = 'cum-cell';
+          if (CSMPlanner.showCumulativeAtTrimester(plan, intakeKey, t, maxT)) {
+            const cum = CSMPlanner.cumulativeCredits(plan, intakeKey, t);
+            if (cum >= data.totalCredits) td.classList.add('milestone');
+            td.textContent = String(cum);
+            td.title = `Total credits earned through ${CSMPlanner.trimesterLabel(intakeKey, t, startYear)}`;
+          }
+          finishTriCell(td, t, ayGroups);
+          return td;
+        });
+        body.appendChild(cumRow);
 
-      const reattemptRow = document.createElement('tr');
-      reattemptRow.className = 'reattempt-row';
-      reattemptRow.innerHTML = '<td class="row-label">Reattempt</td>';
-      appendTriColumns(reattemptRow, maxT, (t) => buildReattemptCell(t, ayGroups));
-      if (CSMPlanner.hasFeature('reattempt')) body.appendChild(reattemptRow);
+        const leaveRow = document.createElement('tr');
+        leaveRow.className = 'leave-row timeline-advanced-section';
+        leaveRow.innerHTML = '<td class="row-label">Leave of<br>Absence</td>';
+        appendTriColumns(leaveRow, maxT, (t) => buildLeaveCell(t, ayGroups));
+        body.appendChild(leaveRow);
 
-      const remoduleRow = document.createElement('tr');
-      remoduleRow.className = 'remodule-row';
-      remoduleRow.innerHTML = '<td class="row-label">Remodule</td>';
-      appendTriColumns(remoduleRow, maxT, (t) => buildRemoduleCell(t, ayGroups));
-      if (CSMPlanner.hasFeature('remodule')) body.appendChild(remoduleRow);
+        if (CSMPlanner.hasFeature('reattempt')) {
+          const reattemptRow = document.createElement('tr');
+          reattemptRow.className = 'reattempt-row timeline-advanced-section';
+          reattemptRow.innerHTML = '<td class="row-label">Reattempt</td>';
+          appendTriColumns(reattemptRow, maxT, (t) => buildReattemptCell(t, ayGroups));
+          body.appendChild(reattemptRow);
+        }
 
-      if (CSMPlanner.hasFeature('rpl')) {
-        const rplRow = document.createElement('tr');
-        rplRow.className = 'rpl-row';
-        rplRow.innerHTML = '<td class="row-label">RPL<span class="row-label-hint">max 24 cr</span></td>';
-        appendTriColumns(rplRow, maxT, (t) => buildRplCell(t, ayGroups));
-        body.appendChild(rplRow);
+        if (CSMPlanner.hasFeature('remodule')) {
+          const remoduleRow = document.createElement('tr');
+          remoduleRow.className = 'remodule-row timeline-advanced-section';
+          remoduleRow.innerHTML = '<td class="row-label">Remodule</td>';
+          appendTriColumns(remoduleRow, maxT, (t) => buildRemoduleCell(t, ayGroups));
+          body.appendChild(remoduleRow);
+        }
+
+        if (CSMPlanner.hasFeature('rpl')) {
+          const rplRow = document.createElement('tr');
+          rplRow.className = 'rpl-row timeline-advanced-section';
+          rplRow.innerHTML = '<td class="row-label">RPL<span class="row-label-hint">max 24 cr</span></td>';
+          appendTriColumns(rplRow, maxT, (t) => buildRplCell(t, ayGroups));
+          body.appendChild(rplRow);
+        }
       }
     }
 

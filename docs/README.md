@@ -11,7 +11,9 @@ Handover documentation for the **SIT CSM Candidature Planner** (`AC-CSM_Tool`). 
 
 A static, client-side web app that lets students and advisors **plan a CSM (Competency-based Stackable Micro-credential) candidature** on a trimester timeline: micro-credentials, Career Catalyst, RIWE, Capstone, leave/reattempt/remodule delays, and RPL (Applied Computing only). It validates prerequisites, counts credits toward 180, and exports a printable plan.
 
-**Current product scope:** UI is **locked to Applied Computing** (`applied-computing`). Other degree programmes remain in `data.json` for future re-enablement but are not selectable.
+**Current product scope:** Four SIT CSM degree programmes are selectable from the header dropdown; rules and catalogue switch per programme.
+
+**Rollback (Jul 2026 UI):** tag `pre-path-viz-clean-ui` — see [09-path-visualization-and-clean-ui.md](./09-path-visualization-and-clean-ui.md).
 
 ---
 
@@ -27,6 +29,7 @@ A static, client-side web app that lets students and advisors **plan a CSM (Comp
 | [06-deployment-and-operations.md](./06-deployment-and-operations.md) | GitHub Pages, cache busting, rollback, local dev |
 | [07-verification-and-sources.md](./07-verification-and-sources.md) | Excel source, `verify.py`, authoritative inputs |
 | [08-change-guide.md](./08-change-guide.md) | Common tasks, extension points, dormant features |
+| [09-path-visualization-and-clean-ui.md](./09-path-visualization-and-clean-ui.md) | Path journey strip, progressive disclosure, rollback |
 
 ---
 

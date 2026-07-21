@@ -61,7 +61,19 @@ git push origin main
 
 Pages redeploys automatically.
 
-### File-level restore
+### Tag rollback (recommended)
+
+| Tag | Purpose |
+|-----|---------|
+| `pre-cohort-rpl-deferral` | Before Sep 2023 cohort, deferral, RPL |
+| `pre-path-viz-clean-ui` | Before path journey + clean UI (Jul 2026) |
+
+```sh
+git checkout pre-path-viz-clean-ui -- index.html planner.js
+# commit + push
+```
+
+### File-level restore (older)
 
 ```sh
 git checkout pre-cohort-rpl-deferral -- data.json planner.js index.html data-embed.js

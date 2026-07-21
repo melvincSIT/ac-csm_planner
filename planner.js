@@ -1070,6 +1070,99 @@
     return courseIdsOfferedInMonth(month).includes(courseId);
   }
 
+  function countMcCategories(plan) {
+    const counts = { foundation: 0, stackable: 0, mc: 0 };
+    uniqueMcIds(plan).forEach((id) => {
+      const c = courseById(id);
+      if (!c) return;
+      counts.mc++;
+      if (isFoundation(c)) counts.foundation++;
+      else counts.stackable++;
+    });
+    return counts;
+  }
+
+  function programmePathMilestones(plan, intakeKey) {
+    const counts = countMcCategories(plan);
+    const bd = creditBreakdown(plan);
+    const labels = DATA.catalogLabels || {};
+    const raw = [];
+
+    if (DATA.foundationCount > 0) {
+      raw.push({
+        id: 'foundation',
+        label: labels.foundation || 'Foundation',
+        progress: `${Math.min(counts.foundation, DATA.foundationCount)}/${DATA.foundationCount}`,
+        done: counts.foundation >= DATA.foundationCount,
+      });
+    }
+
+    if (DATA.foundationCount > 0 && DATA.stackableCount > 0) {
+      raw.push({
+        id: 'stackable',
+        label: labels.stackable || 'Stackable',
+        progress: `${Math.min(counts.stackable, DATA.stackableCount)}/${DATA.stackableCount}`,
+        done: counts.stackable >= DATA.stackableCount,
+      });
+    } else {
+      raw.push({
+        id: 'mc',
+        label: labels.foundation || 'Modules',
+        progress: `${Math.min(counts.mc, DATA.mcCount)}/${DATA.mcCount}`,
+        done: counts.mc >= DATA.mcCount,
+      });
+    }
+
+    if (hasFeature('wfeCc')) {
+      raw.push({
+        id: 'wfe_cc',
+        label: componentName('wfe_cc'),
+        progress: hasCareerCatalystCredit(plan) ? 'Done' : '—',
+        done: hasCareerCatalystCredit(plan),
+        trimester: plan.careerCatalystAt,
+      });
+    }
+
+    if (hasFeature('riwe')) {
+      raw.push({
+        id: 'riwe',
+        label: componentName('riwe'),
+        progress: plan.riweAt != null ? 'Scheduled' : '—',
+        done: plan.riweAt != null,
+        trimester: plan.riweAt,
+      });
+    }
+
+    if (hasFeature('capstone')) {
+      const capTs = capstoneTrimestersFor(plan, intakeKey, DATA.maxTotalTrimesters);
+      raw.push({
+        id: 'capstone',
+        label: componentName('capstone'),
+        progress: plan.capstone ? 'Scheduled' : '—',
+        done: plan.capstone,
+        trimester: plan.capstone && capTs.length ? capTs[0] : null,
+      });
+    }
+
+    raw.push({
+      id: 'complete',
+      label: 'Complete',
+      progress: `${bd.total}/${DATA.totalCredits} cr`,
+      done: bd.total >= DATA.totalCredits,
+    });
+
+    let seenActive = false;
+    return raw.map((step) => {
+      let status = 'pending';
+      if (step.done) status = 'done';
+      else if (!seenActive) {
+        status = 'active';
+        seenActive = true;
+      }
+      return { ...step, status };
+    });
+  }
+
   function analyze(plan, intakeKey) {
     const issues = [];
     const counts = { foundation: 0, stackable: 0, mc: 0 };
@@ -1663,7 +1756,7 @@
     riweCreditsPerTrimester,
     uniqueMcIds,
     formatTileLabel,
-    formatCatalogRefLabel,
-    EMPTY,
+    programmePathMilestones,
+    countMcCategories,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
