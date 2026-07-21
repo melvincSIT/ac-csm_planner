@@ -1114,52 +1114,66 @@
     }
 
     if (hasFeature('wfeCc')) {
+      const wfeDone = hasCareerCatalystCredit(plan);
       raw.push({
         id: 'wfe_cc',
         label: componentName('wfe_cc'),
-        progress: hasCareerCatalystCredit(plan) ? 'Done' : '—',
-        done: hasCareerCatalystCredit(plan),
+        progress: wfeDone ? 'Complete' : bd.wfeCc > 0 ? `${bd.wfeCc}/${DATA.wfeCcCredits} cr` : 'Not started',
+        done: wfeDone,
+        partial: !wfeDone && bd.wfeCc > 0,
         trimester: plan.careerCatalystAt,
       });
     }
 
     if (hasFeature('riwe')) {
+      const riweDone = plan.riweAt != null;
       raw.push({
         id: 'riwe',
         label: componentName('riwe'),
-        progress: plan.riweAt != null ? 'Scheduled' : '—',
-        done: plan.riweAt != null,
+        progress: riweDone ? `${bd.riwe}/${DATA.riweCredits} cr` : 'Not started',
+        done: riweDone,
+        partial: false,
         trimester: plan.riweAt,
       });
     }
 
     if (hasFeature('capstone')) {
       const capTs = capstoneTrimestersFor(plan, intakeKey, DATA.maxTotalTrimesters);
+      const capDone = plan.capstone;
       raw.push({
         id: 'capstone',
         label: componentName('capstone'),
-        progress: plan.capstone ? 'Scheduled' : '—',
-        done: plan.capstone,
-        trimester: plan.capstone && capTs.length ? capTs[0] : null,
+        progress: capDone ? `${DATA.capstoneCredits} cr` : 'Not started',
+        done: capDone,
+        partial: false,
+        trimester: capDone && capTs.length ? capTs[0] : null,
       });
     }
 
     raw.push({
       id: 'complete',
       label: 'Complete',
-      progress: `${bd.total}/${DATA.totalCredits} cr`,
+      progress: `${bd.total} / ${DATA.totalCredits} cr`,
       done: bd.total >= DATA.totalCredits,
+      partial: bd.total > 0 && bd.total < DATA.totalCredits,
     });
 
     let seenActive = false;
     return raw.map((step) => {
+      const partial =
+        step.partial != null
+          ? step.partial
+          : !step.done &&
+            ((step.id === 'foundation' && counts.foundation > 0) ||
+              (step.id === 'stackable' && counts.stackable > 0) ||
+              (step.id === 'mc' && counts.mc > 0));
       let status = 'pending';
       if (step.done) status = 'done';
       else if (!seenActive) {
-        status = 'active';
+        status = partial ? 'partial' : 'active';
         seenActive = true;
       }
-      return { ...step, status };
+      return { ...step, partial, status };
     });
   }
 
@@ -1756,7 +1770,9 @@
     riweCreditsPerTrimester,
     uniqueMcIds,
     formatTileLabel,
+    formatCatalogRefLabel,
     programmePathMilestones,
     countMcCategories,
+    EMPTY,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
