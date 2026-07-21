@@ -2345,8 +2345,8 @@
       </div>
     </dialog>
 
-  <script src="data-embed.js?v=11"></script>
-  <script src="planner.js?v=11"></script>
+  <script src="data-embed.js?v=12"></script>
+  <script src="planner.js?v=12"></script>
   <script>
     let data, plan, intakeKey, startYear, programId;
     let creditsWereComplete = false;
@@ -2358,8 +2358,7 @@
     const INTAKE_ORDER = ['sep', 'jan', 'may'];
     const INTAKE_LABELS = { sep: 'September', jan: 'January', may: 'May' };
     const PROGRAM_KEY = 'csm-planner-program';
-    const ADVANCED_ROWS_KEY = 'csm-planner-advanced-rows';
-    let showAdvancedRowsPref = localStorage.getItem(ADVANCED_ROWS_KEY) === 'true';
+    let showAdvancedRowsPref = false;
 
     function getYearOptions() {
       const years = [];
@@ -3003,18 +3002,10 @@ ${cloneExportContent()}
       if (yearAnim) pulseWheelSegment(yearEl, yearAnim);
     }
 
-    function openAdvancedRows() {
-      if (!showAdvancedRowsPref) {
-        showAdvancedRowsPref = true;
-        localStorage.setItem(ADVANCED_ROWS_KEY, 'true');
-      }
-    }
-
     function toggleLeave(trimester) {
       const idx = trimester - 1;
       const next = !plan.leave[idx];
       if (next) {
-        openAdvancedRows();
         plan.leave[idx] = true;
         plan.reattempt[idx] = false;
         plan.remodule[idx] = false;
@@ -3040,7 +3031,6 @@ ${cloneExportContent()}
       const idx = trimester - 1;
       if (CSMPlanner.isOnLeave(plan, trimester)) return;
       plan.reattempt[idx] = !plan.reattempt[idx];
-      if (plan.reattempt[idx]) openAdvancedRows();
       if (!plan.reattempt[idx] && plan.reattemptMc) {
         plan.reattemptMc[idx] = CSMPlanner.EMPTY;
       }
@@ -3052,7 +3042,6 @@ ${cloneExportContent()}
       if (CSMPlanner.isOnLeave(plan, trimester)) return;
       const next = !plan.remodule[idx];
       plan.remodule[idx] = next;
-      if (next) openAdvancedRows();
       if (!next && plan.remoduleMc) {
         plan.remoduleMc[idx] = CSMPlanner.EMPTY;
       }
@@ -3266,7 +3255,6 @@ ${cloneExportContent()}
       });
       document.getElementById('advancedRowsToggle').addEventListener('click', () => {
         showAdvancedRowsPref = !showAdvancedRowsPref;
-        localStorage.setItem(ADVANCED_ROWS_KEY, showAdvancedRowsPref ? 'true' : 'false');
         render();
       });
       document.getElementById('clearBtn').addEventListener('click', () => {
@@ -3925,7 +3913,6 @@ ${cloneExportContent()}
         const tile = makeTile(label, 'rpl', true);
         tile.title = `MC RPL: ${credits} cr (steps of 3, max 18) — click to cycle`;
         tile.addEventListener('click', () => {
-          openAdvancedRows();
           plan.rplCredits[idx] = CSMPlanner.cycleRplCredits(credits);
           if (plan.rplCredits[idx] < (data.mcCredits || 18)) plan.rplMc[idx] = null;
           render();
@@ -3948,7 +3935,6 @@ ${cloneExportContent()}
         tile.classList.add('option', 'compact');
         tile.title = `MC RPL — click to add (3–18 cr, steps of 3)`;
         tile.addEventListener('click', () => {
-          openAdvancedRows();
           plan.rplCredits[idx] = CSMPlanner.cycleRplCredits(0);
           render();
         });
@@ -3963,7 +3949,6 @@ ${cloneExportContent()}
         : `Add ${ccName} RPL (10 cr)`;
       wfeTile.addEventListener('click', () => {
         if (plan.careerCatalystAt != null) return;
-        openAdvancedRows();
         plan.rplWfe[idx] = CSMPlanner.cycleRplWfe(wfeOn);
         render();
       });
