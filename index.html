@@ -2401,8 +2401,8 @@
       </div>
     </dialog>
 
-  <script src="data-embed.js?v=16"></script>
-  <script src="planner.js?v=16"></script>
+  <script src="data-embed.js?v=18"></script>
+  <script src="planner.js?v=18"></script>
   <script>
     let data, plan, intakeKey, startYear, programId;
     let creditsWereComplete = false;
@@ -3096,7 +3096,14 @@ ${cloneExportContent()}
       const idx = trimester - 1;
       if (CSMPlanner.isOnLeave(plan, trimester)) return;
       plan.reattempt[idx] = !plan.reattempt[idx];
-      if (!plan.reattempt[idx] && plan.reattemptMc) {
+      if (plan.reattempt[idx]) {
+        // Reattempt uses the Micro-credential cell for the module — clear a normal MC pick.
+        plan.mc[idx] = CSMPlanner.EMPTY;
+        if (plan.mcFail) plan.mcFail[idx] = false;
+        if (plan.remodule) plan.remodule[idx] = false;
+        if (plan.remoduleMc) plan.remoduleMc[idx] = CSMPlanner.EMPTY;
+        if (plan.remoduleFail) plan.remoduleFail[idx] = false;
+      } else if (plan.reattemptMc) {
         plan.reattemptMc[idx] = CSMPlanner.EMPTY;
         if (plan.reattemptFail) plan.reattemptFail[idx] = false;
       }
@@ -3829,7 +3836,6 @@ ${cloneExportContent()}
       td.className = 'cell';
       const grid = document.createElement('div');
       grid.className = 'tile-grid';
-      const idx = trimester - 1;
 
       if (CSMPlanner.isOnLeave(plan, trimester)) {
         appendEmptySlot(grid, 'On leave');
@@ -3839,52 +3845,18 @@ ${cloneExportContent()}
       }
 
       const on = CSMPlanner.isOnReattempt(plan, trimester);
-      const current = plan.reattemptMc && plan.reattemptMc[idx];
-      if (on && current) {
-        const info = CSMPlanner.selectionLabel(current);
-        const tile = makeTile(info.name, info.kind, true);
-        tile.classList.add('reattempt');
-        addTileSticker(tile, reattemptStickerLabel(current), 'reattempt');
-        tile.title = `${info.name} — reattempt — click to remove`;
-        tile.addEventListener('click', () => {
-          plan.reattemptMc[idx] = CSMPlanner.EMPTY;
-          plan.reattempt[idx] = false;
-          if (plan.reattemptFail) plan.reattemptFail[idx] = false;
-          render();
-        });
-        bindOutcomeMenu(tile, 'reattempt', trimester);
-        applyFailVisual(tile, 'reattempt', trimester);
-        grid.appendChild(tile);
-        const alts = CSMPlanner.coursesForReattempt(plan, trimester, intakeKey).filter((c) => c.id !== current);
-        if (alts.length) {
-          appendCourseOptionTiles(grid, alts, 'reattempt', 'Switch reattempt to', (id) => {
-            plan.reattemptMc[idx] = id;
-            if (plan.reattemptFail) plan.reattemptFail[idx] = false;
-            render();
-          });
-        }
-      } else if (on) {
-        const options = CSMPlanner.coursesForReattempt(plan, trimester, intakeKey);
-        if (!options.length) {
-          appendEmptySlot(grid, 'No reattempt options in offering window');
-        } else {
-          appendCourseOptionTiles(grid, options, 'reattempt', 'Reattempt', (id) => {
-            plan.reattemptMc[idx] = id;
-            if (plan.reattemptFail) plan.reattemptFail[idx] = false;
-            render();
-          });
-        }
-      } else {
-        const tile = makeTile('Reattempt', 'reattempt', false);
-        tile.classList.add('compact', 'option');
-        tile.title =
-          trimester < 2
-            ? 'Reattempt needs a prior trimester with a module'
-            : 'Mark reattempt — repeat a module (offering window only)';
-        if (trimester >= 2) tile.addEventListener('click', () => toggleReattempt(trimester));
-        else tile.classList.add('slot-muted');
-        grid.appendChild(tile);
-      }
+      const tile = makeTile(on ? 'Reattempt on' : 'Reattempt', 'reattempt', on);
+      tile.classList.add('compact');
+      if (!on) tile.classList.add('option');
+      tile.title =
+        trimester < 2
+          ? 'Reattempt needs a prior trimester with a module'
+          : on
+            ? 'Reattempt active — module appears in Micro-credential row — click to clear'
+            : 'Mark reattempt — choose the module in the Micro-credential row';
+      if (trimester >= 2) tile.addEventListener('click', () => toggleReattempt(trimester));
+      else tile.classList.add('slot-muted');
+      grid.appendChild(tile);
 
       td.appendChild(grid);
       finishTriCell(td, trimester, ayGroups);
@@ -3920,14 +3892,6 @@ ${cloneExportContent()}
         bindOutcomeMenu(tile, 'remodule', trimester);
         applyFailVisual(tile, 'remodule', trimester);
         grid.appendChild(tile);
-        const alts = CSMPlanner.coursesForRemodule(plan, trimester, intakeKey).filter((c) => c.id !== current);
-        if (alts.length) {
-          appendCourseOptionTiles(grid, alts, 'remodule', 'Switch remodule to', (id) => {
-            plan.remoduleMc[idx] = id;
-            if (plan.remoduleFail) plan.remoduleFail[idx] = false;
-            render();
-          });
-        }
       } else if (on) {
         const options = CSMPlanner.coursesForRemodule(plan, trimester, intakeKey);
         if (!options.length) {
@@ -4044,6 +4008,7 @@ ${cloneExportContent()}
       td.className = 'cell';
       const grid = document.createElement('div');
       grid.className = 'tile-grid';
+      const idx = trimester - 1;
 
       if (CSMPlanner.isOnLeave(plan, trimester)) {
         appendEmptySlot(grid, 'On leave — no micro-credential this trimester');
@@ -4059,52 +4024,65 @@ ${cloneExportContent()}
         return td;
       }
 
-      const current = plan.mc[trimester - 1];
-      const carryId = CSMPlanner.carryModuleIntoTrimester(plan, trimester);
+      const onReattempt = CSMPlanner.isOnReattempt(plan, trimester);
+      const reattemptId = plan.reattemptMc && plan.reattemptMc[idx];
 
-      // Grey continuation only in the FOLLOWING trimester (never the reattempt/fail trimester itself)
-      if (carryId && !current) {
-        const info = CSMPlanner.selectionLabel(carryId);
-        if (info) {
+      // Reattempt trimester: module lives in the Micro-credential row with a reattempt indicator.
+      if (onReattempt) {
+        if (reattemptId) {
+          const info = CSMPlanner.selectionLabel(reattemptId);
           const tile = makeTile(info.name, info.kind, true);
-          tile.classList.add('reattempt-ghost');
-          addTileSticker(tile, 'Re-attempt', 'reattempt');
-          tile.title = `${info.name} — taken as reattempt/re-take from previous trimester`;
+          tile.classList.add('reattempt');
+          addTileSticker(tile, reattemptStickerLabel(reattemptId), 'reattempt');
+          tile.title = `${info.name} — reattempt — click to remove`;
+          tile.addEventListener('click', () => {
+            plan.reattemptMc[idx] = CSMPlanner.EMPTY;
+            if (plan.reattemptFail) plan.reattemptFail[idx] = false;
+            render();
+          });
+          bindOutcomeMenu(tile, 'reattempt', trimester);
+          applyFailVisual(tile, 'reattempt', trimester);
           grid.appendChild(tile);
-          td.appendChild(grid);
-          finishTriCell(td, trimester, ayGroups);
-          return td;
+        } else {
+          const options = CSMPlanner.coursesForReattempt(plan, trimester, intakeKey);
+          if (!options.length) {
+            appendEmptySlot(grid, 'No reattempt options in offering window');
+          } else {
+            appendCourseOptionTiles(grid, options, 'reattempt', 'Reattempt', (id) => {
+              plan.reattemptMc[idx] = id;
+              if (plan.reattemptFail) plan.reattemptFail[idx] = false;
+              plan.mc[idx] = CSMPlanner.EMPTY;
+              if (plan.mcFail) plan.mcFail[idx] = false;
+              render();
+            });
+          }
         }
+        td.appendChild(grid);
+        finishTriCell(td, trimester, ayGroups);
+        return td;
       }
 
+      const current = plan.mc[idx];
       if (current) {
         const info = CSMPlanner.selectionLabel(current);
         const tile = makeTile(info.name, info.kind, true);
         tile.title = info.name + ' — click to remove';
         tile.addEventListener('click', () => {
-          plan.mc[trimester - 1] = CSMPlanner.EMPTY;
-          if (plan.mcFail) plan.mcFail[trimester - 1] = false;
+          plan.mc[idx] = CSMPlanner.EMPTY;
+          if (plan.mcFail) plan.mcFail[idx] = false;
           render();
         });
         bindOutcomeMenu(tile, 'mc', trimester);
         applyFailVisual(tile, 'mc', trimester);
         grid.appendChild(tile);
-        const alts = CSMPlanner.coursesForMcSlot(intakeKey, trimester, plan);
-        if (alts.length) {
-          appendCourseOptionTiles(grid, alts, null, 'Switch to', (id) => {
-            plan.mc[trimester - 1] = id;
-            if (plan.mcFail) plan.mcFail[trimester - 1] = false;
-            render();
-          });
-        }
       } else if (CSMPlanner.canAssignMc(trimester, plan)) {
         const courses = CSMPlanner.coursesForMcSlot(intakeKey, trimester, plan);
         if (!courses.length) {
           appendEmptySlot(grid, 'Nothing offered this trimester');
         } else {
           appendCourseOptionTiles(grid, courses, null, 'Add micro-credential', (id) => {
-            plan.mc[trimester - 1] = id;
-            if (plan.mcFail) plan.mcFail[trimester - 1] = false;
+            plan.mc[idx] = id;
+            if (plan.mcFail) plan.mcFail[idx] = false;
             render();
           });
         }

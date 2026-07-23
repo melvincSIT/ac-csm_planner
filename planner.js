@@ -392,9 +392,9 @@
 
   function isFailedAttempt(plan, trimester, slot) {
     const idx = trimester - 1;
-    if (slot === 'mc') return !!(plan.mc?.[idx] && plan.mcFail?.[idx]);
-    if (slot === 'reattempt') return !!(plan.reattemptMc?.[idx] && plan.reattemptFail?.[idx]);
-    if (slot === 'remodule') return !!(plan.remoduleMc?.[idx] && plan.remoduleFail?.[idx]);
+    if (slot === 'mc') return !!(plan.mc?.[idx] && plan.mcFail?.[idx] === true);
+    if (slot === 'reattempt') return !!(plan.reattemptMc?.[idx] && plan.reattemptFail?.[idx] === true);
+    if (slot === 'remodule') return !!(plan.remoduleMc?.[idx] && plan.remoduleFail?.[idx] === true);
     return false;
   }
 
@@ -429,21 +429,13 @@
     return failed;
   }
 
-  /** Module that continues into this trimester as a grey take (from previous trimester only). */
+  /** Grey continuation tile: only the trimester AFTER an active reattempt. */
   function carryModuleIntoTrimester(plan, trimester) {
     if (trimester < 2) return null;
-    const prev = trimester - 1;
-    const prevIdx = prev - 1;
-    if (plan.reattempt?.[prevIdx] && plan.reattemptMc?.[prevIdx]) {
-      return plan.reattemptMc[prevIdx];
-    }
-    if (plan.mc?.[prevIdx] && plan.mcFail?.[prevIdx]) {
-      return plan.mc[prevIdx];
-    }
-    if (plan.remodule?.[prevIdx] && plan.remoduleMc?.[prevIdx] && plan.remoduleFail?.[prevIdx]) {
-      return plan.remoduleMc[prevIdx];
-    }
-    return null;
+    const prevIdx = trimester - 2;
+    if (!(plan.reattempt && plan.reattempt[prevIdx])) return null;
+    const id = plan.reattemptMc && plan.reattemptMc[prevIdx];
+    return id || null;
   }
 
   function addUniqueMcCredits(plan, countedMc, onCourse) {
@@ -646,16 +638,16 @@
     const sameTri = courseIdsUsedInTrimester(plan, trimester, 'mc');
     const current = plan.mc[trimester - 1];
     const completedElsewhere = new Set(uniqueMcIds(plan));
-    if (current) completedElsewhere.delete(current);
     const bothFoundations = hasBothFoundations(plan);
 
     return ids
       .map((id) => courseById(id))
       .filter((c) => {
         if (!c) return false;
+        if (c.id === current) return false;
         if (sameTri.has(c.id)) return false;
         if (completedElsewhere.has(c.id)) return false;
-        if (bothFoundations && isFoundation(c) && c.id !== current) return false;
+        if (bothFoundations && isFoundation(c)) return false;
         return true;
       });
   }
@@ -833,6 +825,22 @@
       }
     }
 
+    // Drop orphaned fail/reattempt state so grey carry never cascades from stale flags.
+    for (let t = 1; t <= DATA.maxTotalTrimesters; t++) {
+      const idx = t - 1;
+      if (!plan.mc?.[idx] && plan.mcFail) plan.mcFail[idx] = false;
+      if (!(plan.reattempt && plan.reattempt[idx])) {
+        if (plan.reattemptMc) plan.reattemptMc[idx] = EMPTY;
+        if (plan.reattemptFail) plan.reattemptFail[idx] = false;
+      }
+      if (!(plan.remodule && plan.remodule[idx])) {
+        if (plan.remoduleMc) plan.remoduleMc[idx] = EMPTY;
+        if (plan.remoduleFail) plan.remoduleFail[idx] = false;
+      }
+      if (!plan.reattemptMc?.[idx] && plan.reattemptFail) plan.reattemptFail[idx] = false;
+      if (!plan.remoduleMc?.[idx] && plan.remoduleFail) plan.remoduleFail[idx] = false;
+    }
+
     if (hasFeature('reattempt') && plan.reattemptMc) {
       for (let t = 1; t <= DATA.maxTotalTrimesters; t++) {
         const idx = t - 1;
@@ -841,6 +849,7 @@
         if (!isValidReattemptSelection(plan, intakeKey, t, id)) {
           plan.reattemptMc[idx] = EMPTY;
           if (plan.reattempt) plan.reattempt[idx] = false;
+          if (plan.reattemptFail) plan.reattemptFail[idx] = false;
         }
       }
     }
@@ -853,6 +862,7 @@
         if (!isValidRemoduleSelection(plan, intakeKey, t, id)) {
           plan.remoduleMc[idx] = EMPTY;
           if (plan.remodule) plan.remodule[idx] = false;
+          if (plan.remoduleFail) plan.remoduleFail[idx] = false;
         }
       }
     }
