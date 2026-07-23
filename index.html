@@ -278,6 +278,44 @@
       color: #9a9a9a;
       border-color: #555;
     }
+    .tile.outcome-fail {
+      outline: 2px solid #c0392b;
+      outline-offset: 1px;
+    }
+    .tile-sticker--fail {
+      background: #c0392b;
+      color: #fff;
+    }
+    .outcome-menu {
+      position: fixed;
+      z-index: 10000;
+      min-width: 9rem;
+      padding: 0.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    }
+    .outcome-menu button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: 0.78rem;
+      padding: 0.4rem 0.55rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .outcome-menu button:hover,
+    .outcome-menu button.active {
+      background: var(--surface-muted);
+    }
+    .outcome-menu button.fail {
+      color: #c0392b;
+    }
     .tile.has-tile-sticker {
       position: relative;
       overflow: visible;
@@ -2363,8 +2401,8 @@
       </div>
     </dialog>
 
-  <script src="data-embed.js?v=15"></script>
-  <script src="planner.js?v=15"></script>
+  <script src="data-embed.js?v=16"></script>
+  <script src="planner.js?v=16"></script>
   <script>
     let data, plan, intakeKey, startYear, programId;
     let creditsWereComplete = false;
@@ -2635,6 +2673,12 @@
       while (plan.rplWfe.length < data.maxTotalTrimesters) {
         plan.rplWfe.push(false);
       }
+      if (!plan.mcFail) plan.mcFail = new Array(data.maxTotalTrimesters).fill(false);
+      if (!plan.reattemptFail) plan.reattemptFail = new Array(data.maxTotalTrimesters).fill(false);
+      if (!plan.remoduleFail) plan.remoduleFail = new Array(data.maxTotalTrimesters).fill(false);
+      while (plan.mcFail.length < data.maxTotalTrimesters) plan.mcFail.push(false);
+      while (plan.reattemptFail.length < data.maxTotalTrimesters) plan.reattemptFail.push(false);
+      while (plan.remoduleFail.length < data.maxTotalTrimesters) plan.remoduleFail.push(false);
     }
 
     function applyAutoExtension() {
@@ -2664,6 +2708,9 @@
       plan.mc[idx] = CSMPlanner.EMPTY;
       if (plan.reattemptMc) plan.reattemptMc[idx] = CSMPlanner.EMPTY;
       if (plan.remoduleMc) plan.remoduleMc[idx] = CSMPlanner.EMPTY;
+      if (plan.mcFail) plan.mcFail[idx] = false;
+      if (plan.reattemptFail) plan.reattemptFail[idx] = false;
+      if (plan.remoduleFail) plan.remoduleFail[idx] = false;
       if (plan.careerCatalystAt === trimester) plan.careerCatalystAt = null;
       if (plan.riweAt != null && CSMPlanner.isRiweActiveTrimester(plan, intakeKey, trimester)) {
         plan.riweAt = null;
@@ -3051,6 +3098,7 @@ ${cloneExportContent()}
       plan.reattempt[idx] = !plan.reattempt[idx];
       if (!plan.reattempt[idx] && plan.reattemptMc) {
         plan.reattemptMc[idx] = CSMPlanner.EMPTY;
+        if (plan.reattemptFail) plan.reattemptFail[idx] = false;
       }
       render();
     }
@@ -3062,6 +3110,7 @@ ${cloneExportContent()}
       plan.remodule[idx] = next;
       if (!next && plan.remoduleMc) {
         plan.remoduleMc[idx] = CSMPlanner.EMPTY;
+        if (plan.remoduleFail) plan.remoduleFail[idx] = false;
       }
       render();
     }
@@ -3268,6 +3317,8 @@ ${cloneExportContent()}
       initProgramHeader();
       updateProgramCopy();
 
+      document.addEventListener('click', hideOutcomeMenu);
+      document.addEventListener('scroll', hideOutcomeMenu, true);
       document.getElementById('programmeDuration').addEventListener('change', () => {
         render();
       });
@@ -3798,13 +3849,17 @@ ${cloneExportContent()}
         tile.addEventListener('click', () => {
           plan.reattemptMc[idx] = CSMPlanner.EMPTY;
           plan.reattempt[idx] = false;
+          if (plan.reattemptFail) plan.reattemptFail[idx] = false;
           render();
         });
+        bindOutcomeMenu(tile, 'reattempt', trimester);
+        applyFailVisual(tile, 'reattempt', trimester);
         grid.appendChild(tile);
         const alts = CSMPlanner.coursesForReattempt(plan, trimester, intakeKey).filter((c) => c.id !== current);
         if (alts.length) {
           appendCourseOptionTiles(grid, alts, 'reattempt', 'Switch reattempt to', (id) => {
             plan.reattemptMc[idx] = id;
+            if (plan.reattemptFail) plan.reattemptFail[idx] = false;
             render();
           });
         }
@@ -3815,6 +3870,7 @@ ${cloneExportContent()}
         } else {
           appendCourseOptionTiles(grid, options, 'reattempt', 'Reattempt', (id) => {
             plan.reattemptMc[idx] = id;
+            if (plan.reattemptFail) plan.reattemptFail[idx] = false;
             render();
           });
         }
@@ -3858,23 +3914,28 @@ ${cloneExportContent()}
         tile.title = `${info.name} — remodule — click to remove`;
         tile.addEventListener('click', () => {
           plan.remoduleMc[idx] = CSMPlanner.EMPTY;
+          if (plan.remoduleFail) plan.remoduleFail[idx] = false;
           render();
         });
+        bindOutcomeMenu(tile, 'remodule', trimester);
+        applyFailVisual(tile, 'remodule', trimester);
         grid.appendChild(tile);
         const alts = CSMPlanner.coursesForRemodule(plan, trimester, intakeKey).filter((c) => c.id !== current);
         if (alts.length) {
           appendCourseOptionTiles(grid, alts, 'remodule', 'Switch remodule to', (id) => {
             plan.remoduleMc[idx] = id;
+            if (plan.remoduleFail) plan.remoduleFail[idx] = false;
             render();
           });
         }
       } else if (on) {
         const options = CSMPlanner.coursesForRemodule(plan, trimester, intakeKey);
         if (!options.length) {
-          appendEmptySlot(grid, 'No remodule options in offering window');
+          appendEmptySlot(grid, 'No remodule options — wait until the module is offered again');
         } else {
           appendCourseOptionTiles(grid, options, 'remodule', 'Remodule', (id) => {
             plan.remoduleMc[idx] = id;
+            if (plan.remoduleFail) plan.remoduleFail[idx] = false;
             render();
           });
         }
@@ -3999,18 +4060,16 @@ ${cloneExportContent()}
       }
 
       const current = plan.mc[trimester - 1];
-      const prevReattemptId =
-        trimester >= 2 && plan.reattempt && plan.reattempt[trimester - 2]
-          ? plan.reattemptMc && plan.reattemptMc[trimester - 2]
-          : null;
+      const carryId = CSMPlanner.carryModuleIntoTrimester(plan, trimester);
 
-      if (prevReattemptId && !current) {
-        const info = CSMPlanner.selectionLabel(prevReattemptId);
+      // Grey continuation only in the FOLLOWING trimester (never the reattempt/fail trimester itself)
+      if (carryId && !current) {
+        const info = CSMPlanner.selectionLabel(carryId);
         if (info) {
           const tile = makeTile(info.name, info.kind, true);
           tile.classList.add('reattempt-ghost');
           addTileSticker(tile, 'Re-attempt', 'reattempt');
-          tile.title = `${info.name} — taken as reattempt from previous trimester`;
+          tile.title = `${info.name} — taken as reattempt/re-take from previous trimester`;
           grid.appendChild(tile);
           td.appendChild(grid);
           finishTriCell(td, trimester, ayGroups);
@@ -4024,13 +4083,17 @@ ${cloneExportContent()}
         tile.title = info.name + ' — click to remove';
         tile.addEventListener('click', () => {
           plan.mc[trimester - 1] = CSMPlanner.EMPTY;
+          if (plan.mcFail) plan.mcFail[trimester - 1] = false;
           render();
         });
+        bindOutcomeMenu(tile, 'mc', trimester);
+        applyFailVisual(tile, 'mc', trimester);
         grid.appendChild(tile);
         const alts = CSMPlanner.coursesForMcSlot(intakeKey, trimester, plan);
         if (alts.length) {
           appendCourseOptionTiles(grid, alts, null, 'Switch to', (id) => {
             plan.mc[trimester - 1] = id;
+            if (plan.mcFail) plan.mcFail[trimester - 1] = false;
             render();
           });
         }
@@ -4041,6 +4104,7 @@ ${cloneExportContent()}
         } else {
           appendCourseOptionTiles(grid, courses, null, 'Add micro-credential', (id) => {
             plan.mc[trimester - 1] = id;
+            if (plan.mcFail) plan.mcFail[trimester - 1] = false;
             render();
           });
         }
@@ -4255,6 +4319,46 @@ ${cloneExportContent()}
       el.className = 'tile ' + kind + (selected ? ' selected' : '');
       el.textContent = CSMPlanner.formatTileLabel(label);
       return el;
+    }
+
+    function hideOutcomeMenu() {
+      document.querySelectorAll('.outcome-menu').forEach((el) => el.remove());
+    }
+
+    function showOutcomeMenu(clientX, clientY, slot, trimester) {
+      hideOutcomeMenu();
+      const failed = CSMPlanner.isFailedAttempt(plan, trimester, slot);
+      const menu = document.createElement('div');
+      menu.className = 'outcome-menu';
+      menu.setAttribute('role', 'menu');
+      menu.innerHTML =
+        `<button type="button" class="${failed ? '' : 'active'}" data-outcome="pass">Pass (default)</button>` +
+        `<button type="button" class="fail${failed ? ' active' : ''}" data-outcome="fail">Fail</button>`;
+      menu.style.left = `${Math.min(clientX, window.innerWidth - 160)}px`;
+      menu.style.top = `${Math.min(clientY, window.innerHeight - 90)}px`;
+      menu.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-outcome]');
+        if (!btn) return;
+        CSMPlanner.setSlotFail(plan, slot, trimester, btn.dataset.outcome === 'fail');
+        hideOutcomeMenu();
+        render();
+      });
+      document.body.appendChild(menu);
+    }
+
+    function bindOutcomeMenu(tile, slot, trimester) {
+      tile.title = (tile.title || '') + ' — right-click to set Pass/Fail';
+      tile.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        showOutcomeMenu(e.clientX, e.clientY, slot, trimester);
+      });
+    }
+
+    function applyFailVisual(tile, slot, trimester) {
+      if (!CSMPlanner.isFailedAttempt(plan, trimester, slot)) return;
+      tile.classList.add('outcome-fail');
+      addTileSticker(tile, 'Fail', 'fail');
     }
 
     function updateCatalogViewToggle() {

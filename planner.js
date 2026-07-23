@@ -251,6 +251,9 @@
       leave: new Array(DATA.maxTotalTrimesters).fill(false),
       reattempt: new Array(DATA.maxTotalTrimesters).fill(false),
       remodule: new Array(DATA.maxTotalTrimesters).fill(false),
+      mcFail: new Array(DATA.maxTotalTrimesters).fill(false),
+      reattemptFail: new Array(DATA.maxTotalTrimesters).fill(false),
+      remoduleFail: new Array(DATA.maxTotalTrimesters).fill(false),
       rplCredits: new Array(DATA.maxTotalTrimesters).fill(0),
       rplMc: new Array(DATA.maxTotalTrimesters).fill(null),
       rplWfe: new Array(DATA.maxTotalTrimesters).fill(false),
@@ -387,14 +390,82 @@
     return total;
   }
 
+  function isFailedAttempt(plan, trimester, slot) {
+    const idx = trimester - 1;
+    if (slot === 'mc') return !!(plan.mc?.[idx] && plan.mcFail?.[idx]);
+    if (slot === 'reattempt') return !!(plan.reattemptMc?.[idx] && plan.reattemptFail?.[idx]);
+    if (slot === 'remodule') return !!(plan.remoduleMc?.[idx] && plan.remoduleFail?.[idx]);
+    return false;
+  }
+
+  function setSlotFail(plan, slot, trimester, failed) {
+    const idx = trimester - 1;
+    if (!plan.mcFail) plan.mcFail = new Array(DATA.maxTotalTrimesters).fill(false);
+    if (!plan.reattemptFail) plan.reattemptFail = new Array(DATA.maxTotalTrimesters).fill(false);
+    if (!plan.remoduleFail) plan.remoduleFail = new Array(DATA.maxTotalTrimesters).fill(false);
+    if (slot === 'mc') plan.mcFail[idx] = !!failed;
+    else if (slot === 'reattempt') plan.reattemptFail[idx] = !!failed;
+    else if (slot === 'remodule') plan.remoduleFail[idx] = !!failed;
+  }
+
+  function clearSlotFail(plan, slot, trimester) {
+    setSlotFail(plan, slot, trimester, false);
+  }
+
+  function courseHasPassedAttempt(plan, courseId) {
+    return allScheduledCourseEntries(plan).some(
+      ({ trimester: t, id, slot }) => id === courseId && !isFailedAttempt(plan, t, slot)
+    );
+  }
+
+  function failedCourseIds(plan) {
+    const failed = new Set();
+    const passed = new Set();
+    allScheduledCourseEntries(plan).forEach(({ trimester: t, id, slot }) => {
+      if (isFailedAttempt(plan, t, slot)) failed.add(id);
+      else passed.add(id);
+    });
+    passed.forEach((id) => failed.delete(id));
+    return failed;
+  }
+
+  /** Module that continues into this trimester as a grey take (from previous trimester only). */
+  function carryModuleIntoTrimester(plan, trimester) {
+    if (trimester < 2) return null;
+    const prev = trimester - 1;
+    const prevIdx = prev - 1;
+    if (plan.reattempt?.[prevIdx] && plan.reattemptMc?.[prevIdx]) {
+      return plan.reattemptMc[prevIdx];
+    }
+    if (plan.mc?.[prevIdx] && plan.mcFail?.[prevIdx]) {
+      return plan.mc[prevIdx];
+    }
+    if (plan.remodule?.[prevIdx] && plan.remoduleMc?.[prevIdx] && plan.remoduleFail?.[prevIdx]) {
+      return plan.remoduleMc[prevIdx];
+    }
+    return null;
+  }
+
   function addUniqueMcCredits(plan, countedMc, onCourse) {
-    allScheduledCourseEntries(plan).forEach(({ id }) => {
+    allScheduledCourseEntries(plan).forEach(({ trimester: t, id, slot }) => {
       if (!id || countedMc.has(id)) return;
+      if (isFailedAttempt(plan, t, slot)) return;
       const c = courseById(id);
       if (!c) return;
       countedMc.add(id);
       onCourse(c);
     });
+  }
+
+  function uniqueMcIds(plan) {
+    const ids = new Set();
+    allScheduledCourseEntries(plan).forEach(({ trimester: t, id, slot }) => {
+      if (id && !isFailedAttempt(plan, t, slot)) ids.add(id);
+    });
+    (plan.rplMc || []).forEach((id, i) => {
+      if (id && rplCreditsAt(plan, i + 1) >= (DATA.mcCredits || 18)) ids.add(id);
+    });
+    return ids;
   }
 
   function rplMaxPerTrimester() {
@@ -442,20 +513,10 @@
   function isValidRemoduleSelection(plan, intakeKey, trimester, courseId) {
     if (!courseId || !hasFeature('remodule')) return false;
     if (!hasPriorCourseAttempt(plan, courseId, trimester)) return false;
-    if (!courseRetryTrimesters(intakeKey, courseId, DATA.maxTotalTrimesters).has(trimester)) {
-      return false;
-    }
+    // Remodule only when the course is actually offered again
+    if (!isCourseOfferedInTrimester(intakeKey, trimester, courseId)) return false;
     const prior = countCourseAttemptsExcluding(plan, courseId, trimester, 'remodule');
     return prior < 3;
-  }
-
-  function uniqueMcIds(plan) {
-    const ids = new Set();
-    allScheduledCourseEntries(plan).forEach(({ id }) => ids.add(id));
-    (plan.rplMc || []).forEach((id, i) => {
-      if (id && rplCreditsAt(plan, i + 1) >= (DATA.mcCredits || 18)) ids.add(id);
-    });
-    return ids;
   }
 
   function rplCreditsAt(plan, trimester) {
@@ -874,9 +935,11 @@
 
     for (let t = 1; t <= throughTrimester; t++) {
       const idx = t - 1;
-      [plan.mc, plan.reattemptMc, plan.remoduleMc].forEach((arr) => {
+      [plan.mc, plan.reattemptMc, plan.remoduleMc].forEach((arr, arrIdx) => {
         const sel = arr && arr[idx];
         if (!sel || countedMc.has(sel)) return;
+        const slot = arrIdx === 0 ? 'mc' : arrIdx === 1 ? 'reattempt' : 'remodule';
+        if (isFailedAttempt(plan, t, slot)) return;
         const c = courseById(sel);
         if (c) {
           total += c.credits;
@@ -1100,15 +1163,16 @@
 
   function coursesForRemodule(plan, trimester, intakeKey) {
     const sameTri = courseIdsUsedInTrimester(plan, trimester, 'remodule');
-    const maxT = DATA.maxTotalTrimesters;
-    return [...uniqueMcIds(plan)]
+    const candidates = new Set([...uniqueMcIds(plan), ...failedCourseIds(plan)]);
+    return [...candidates]
       .map((id) => courseById(id))
       .filter((c) => {
         if (!c) return false;
         if (sameTri.has(c.id)) return false;
         if (!hasPriorCourseAttempt(plan, c.id, trimester)) return false;
         if (countCourseAttemptsExcluding(plan, c.id, trimester, 'remodule') >= 3) return false;
-        return courseRetryTrimesters(intakeKey, c.id, maxT).has(trimester);
+        // Available again only when the module is next offered
+        return isCourseOfferedInTrimester(intakeKey, trimester, c.id);
       });
   }
 
@@ -1265,9 +1329,17 @@
         });
       }
       if ((slot === 'reattempt' || slot === 'remodule') && !courseRetryTrimesters(intakeKey, c.id, DATA.maxTotalTrimesters).has(t)) {
+        if (slot === 'reattempt') {
+          issues.push({
+            type: 'error',
+            msg: `Trimester ${t}: ${c.name} ${slot} is only allowed in the ${reattemptOfferWindow()} trimesters when that course is offered.`,
+          });
+        }
+      }
+      if (slot === 'remodule' && !isCourseOfferedInTrimester(intakeKey, t, c.id)) {
         issues.push({
           type: 'error',
-          msg: `Trimester ${t}: ${c.name} ${slot} is only allowed in the ${reattemptOfferWindow()} trimesters when that course is offered.`,
+          msg: `Trimester ${t}: ${c.name} remodule is only when that module is offered again.`,
         });
       }
     });
@@ -1310,6 +1382,14 @@
           msg: `${c ? c.name : 'Module'}: maximum 3 attempts allowed (have ${n}).`,
         });
       }
+    });
+
+    failedCourseIds(plan).forEach((id) => {
+      const c = courseById(id);
+      issues.push({
+        type: 'warn',
+        msg: `${c ? c.name : 'Module'}: failed — credits do not count until passed via reattempt or remodule.`,
+      });
     });
 
     uniqueIds.forEach((id) => {
@@ -1558,6 +1638,9 @@
       remodule: noDelays.remodule,
       reattemptMc: new Array(DATA.maxTotalTrimesters).fill(EMPTY),
       remoduleMc: new Array(DATA.maxTotalTrimesters).fill(EMPTY),
+      mcFail: new Array(DATA.maxTotalTrimesters).fill(false),
+      reattemptFail: new Array(DATA.maxTotalTrimesters).fill(false),
+      remoduleFail: new Array(DATA.maxTotalTrimesters).fill(false),
       rplCredits: new Array(DATA.maxTotalTrimesters).fill(0),
       rplMc: new Array(DATA.maxTotalTrimesters).fill(null),
       rplWfe: new Array(DATA.maxTotalTrimesters).fill(false),
@@ -1840,6 +1923,12 @@
     formatCatalogRefLabel,
     programmePathMilestones,
     countMcCategories,
+    isFailedAttempt,
+    setSlotFail,
+    clearSlotFail,
+    courseHasPassedAttempt,
+    failedCourseIds,
+    carryModuleIntoTrimester,
     EMPTY,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
