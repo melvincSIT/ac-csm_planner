@@ -260,6 +260,20 @@
       border-style: dashed;
     }
     .tile.reattempt.selected { border-style: solid; color: var(--text); }
+    .tile.reattempt-ghost {
+      background: #e4e4e4;
+      color: #6b6b6b;
+      border-color: #a8a8a8;
+      border-style: dashed;
+      opacity: 0.9;
+      pointer-events: none;
+      cursor: default;
+    }
+    [data-theme="dark"] .tile.reattempt-ghost {
+      background: #2c2c2c;
+      color: #9a9a9a;
+      border-color: #555;
+    }
     .tile.has-tile-sticker {
       position: relative;
       overflow: visible;
@@ -2345,8 +2359,8 @@
       </div>
     </dialog>
 
-  <script src="data-embed.js?v=12"></script>
-  <script src="planner.js?v=12"></script>
+  <script src="data-embed.js?v=13"></script>
+  <script src="planner.js?v=13"></script>
   <script>
     let data, plan, intakeKey, startYear, programId;
     let creditsWereComplete = false;
@@ -3761,6 +3775,10 @@ ${cloneExportContent()}
       const grid = document.createElement('div');
       grid.className = 'tile-grid';
       const idx = trimester - 1;
+      const prevReattemptId =
+        trimester >= 2 && plan.reattempt && plan.reattempt[trimester - 2]
+          ? plan.reattemptMc && plan.reattemptMc[trimester - 2]
+          : null;
 
       if (CSMPlanner.isOnLeave(plan, trimester)) {
         appendEmptySlot(grid, 'On leave');
@@ -3810,6 +3828,16 @@ ${cloneExportContent()}
         if (trimester >= 2) tile.addEventListener('click', () => toggleReattempt(trimester));
         else tile.classList.add('slot-muted');
         grid.appendChild(tile);
+      }
+
+      if (prevReattemptId && prevReattemptId !== current) {
+        const info = CSMPlanner.selectionLabel(prevReattemptId);
+        if (info) {
+          const ghost = makeTile(info.name, info.kind, false);
+          ghost.classList.add('reattempt-ghost');
+          ghost.title = `${info.name} — from reattempt in previous trimester`;
+          grid.appendChild(ghost);
+        }
       }
 
       td.appendChild(grid);
@@ -3981,6 +4009,10 @@ ${cloneExportContent()}
       }
 
       const current = plan.mc[trimester - 1];
+      const prevReattemptId =
+        trimester >= 2 && plan.reattempt && plan.reattempt[trimester - 2]
+          ? plan.reattemptMc && plan.reattemptMc[trimester - 2]
+          : null;
 
       if (current) {
         const info = CSMPlanner.selectionLabel(current);
@@ -4010,6 +4042,16 @@ ${cloneExportContent()}
         }
       } else {
         appendEmptySlot(grid, 'Micro-credential slot');
+      }
+
+      if (prevReattemptId && prevReattemptId !== current) {
+        const info = CSMPlanner.selectionLabel(prevReattemptId);
+        if (info) {
+          const ghost = makeTile(info.name, info.kind, false);
+          ghost.classList.add('reattempt-ghost');
+          ghost.title = `${info.name} — reattempt from previous trimester`;
+          grid.appendChild(ghost);
+        }
       }
 
       td.appendChild(grid);

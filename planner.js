@@ -639,7 +639,14 @@
   }
 
   function canOfferRiwe(plan, trimester) {
-    return studyYearAt(plan, trimester) === DATA.constraints.wfeRiweYear;
+    const minYear = DATA.constraints.wfeRiweYear || 2;
+    return studyYearAt(plan, trimester) >= minYear;
+  }
+
+  function minRiweStudyIndex(intakeKey) {
+    const slots = riweStudySlots(intakeKey);
+    if (slots.length) return Math.min(...slots);
+    return (DATA.constraints.wfeRiweYear || 2) * 3 - 2;
   }
 
   function canStartCapstone(plan, trimester) {
@@ -698,31 +705,71 @@
     return DATA.intakes[intakeKey].wfeRiweTrimesters || [];
   }
 
+  function riweDurationTrimesters() {
+    return (DATA.prerequisites.wfeRiwe && DATA.prerequisites.wfeRiwe.durationTrimesters) || 2;
+  }
+
+  function collectNonDelaySpan(plan, startCalendar, count) {
+    const span = [];
+    for (let t = startCalendar; t <= DATA.maxTotalTrimesters && span.length < count; t++) {
+      if (isPlanningDelay(plan, t)) continue;
+      span.push(t);
+    }
+    return span;
+  }
+
+  function isValidRiweStart(plan, trimester, intakeKey) {
+    if (trimester == null) return false;
+    if (isPlanningDelay(plan, trimester)) return false;
+    if (studyTrimesterIndex(plan, trimester) < minRiweStudyIndex(intakeKey)) return false;
+    if (!canOfferRiwe(plan, trimester)) return false;
+    if (!meetsRiwePrereq(plan, trimester)) return false;
+    return true;
+  }
+
   function riweCalendarSlots(plan, intakeKey) {
-    return riweStudySlots(intakeKey)
+    const duration = riweDurationTrimesters();
+    const ideal = riweStudySlots(intakeKey)
       .map((st) => calendarTrimesterForStudyIndex(plan, st))
       .filter((t) => t != null);
+
+    if (ideal.length && isValidRiweStart(plan, ideal[0], intakeKey)) {
+      const fromIdeal = collectNonDelaySpan(plan, ideal[0], duration);
+      if (fromIdeal.length >= duration) return fromIdeal;
+    }
+
+    for (let t = 1; t <= DATA.maxTotalTrimesters; t++) {
+      if (!isValidRiweStart(plan, t, intakeKey)) continue;
+      const span = collectNonDelaySpan(plan, t, duration);
+      if (span.length >= duration) return span;
+    }
+
+    return ideal.slice(0, duration);
   }
 
   function riweStartTrimesters(plan, intakeKey) {
     const slots = riweCalendarSlots(plan, intakeKey);
-    return slots.length ? [slots[0]] : [];
+    if (!slots.length) return [];
+    if (isValidRiweStart(plan, slots[0], intakeKey)) return [slots[0]];
+    return [];
   }
 
   function riweSpanTrimesters(plan, intakeKey) {
+    const duration = riweDurationTrimesters();
     const slots = riweCalendarSlots(plan, intakeKey);
-    const duration = (DATA.prerequisites.wfeRiwe && DATA.prerequisites.wfeRiwe.durationTrimesters) || 2;
     if (!slots.length) return [];
     if (plan.riweAt == null) return slots.slice(0, duration);
     const startIdx = slots.indexOf(plan.riweAt);
-    if (startIdx < 0) return [];
-    return slots.slice(startIdx, startIdx + duration);
+    if (startIdx >= 0) return slots.slice(startIdx, startIdx + duration);
+    return collectNonDelaySpan(plan, plan.riweAt, duration);
   }
 
   function sanitizePlanSchedule(plan, intakeKey) {
     if (plan.riweAt != null) {
       const starts = riweStartTrimesters(plan, intakeKey);
-      if (!starts.length || plan.riweAt !== starts[0]) plan.riweAt = null;
+      if (!starts.length || !starts.includes(plan.riweAt)) {
+        plan.riweAt = starts[0] != null ? starts[0] : null;
+      }
     }
 
     if (hasFeature('reattempt') && plan.reattemptMc) {
@@ -765,7 +812,7 @@
     const span = riweSpanTrimesters(plan, intakeKey);
     if (span.length) return new Set(span);
     const slots = riweCalendarSlots(plan, intakeKey);
-    const duration = (DATA.prerequisites.wfeRiwe && DATA.prerequisites.wfeRiwe.durationTrimesters) || 2;
+    const duration = riweDurationTrimesters();
     return new Set(slots.slice(0, duration));
   }
 
@@ -1378,19 +1425,25 @@
         issues.push({ type: 'warn', msg: `${riweName} not marked (study Year 2 only).` });
       } else {
         if (!canOfferRiwe(plan, plan.riweAt)) {
-          issues.push({ type: 'error', msg: `${riweName} must be scheduled in study Year 2.` });
+          issues.push({ type: 'error', msg: `${riweName} must be scheduled in study Year ${DATA.constraints.wfeRiweYear || 2} or later.` });
         }
         const riweStarts = riweStartTrimesters(plan, intakeKey);
-        if (!riweStarts.includes(plan.riweAt) || plan.riweAt !== riweStarts[0]) {
+        if (!riweStarts.includes(plan.riweAt)) {
           issues.push({
             type: 'error',
-            msg: `${riweName} must start in trimester ${riweStarts[0] || '—'} (study Year 2).`,
+            msg: `${riweName} must start after at least 3 study trimesters (earliest: trimester ${riweStarts[0] || '—'}).`,
           });
         }
         if (!meetsRiwePrereq(plan, plan.riweAt)) {
           issues.push({
             type: 'error',
             msg: `${riweName} (from Tri ${plan.riweAt}): prerequisite not met (${DATA.prerequisites.wfeRiwe.description}).`,
+          });
+        }
+        if (studyTrimesterIndex(plan, plan.riweAt) < minRiweStudyIndex(intakeKey)) {
+          issues.push({
+            type: 'error',
+            msg: `${riweName} can only start after at least ${minRiweStudyIndex(intakeKey) - 1} study trimesters have passed.`,
           });
         }
         if (isTrimesterBlocked(plan, plan.riweAt)) {
