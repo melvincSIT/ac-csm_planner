@@ -1605,6 +1605,15 @@
   }
 
   function findCareerCatalystTrimester(intakeKey, plan, used) {
+    const preferred = 3;
+    if (
+      preferred <= DATA.maxCoreTrimesters &&
+      !plan.mc[preferred - 1] &&
+      canAssignCareerCatalyst(preferred, plan)
+    ) {
+      return preferred;
+    }
+
     const maxT = DATA.maxCoreTrimesters;
     const candidates = [];
     for (let t = 1; t <= maxT; t++) {
@@ -1614,21 +1623,22 @@
       if (mcBefore < 1) continue;
       let score = mcBefore * 8;
       if (mcBefore >= 2) score += 22;
-      if (t >= 3) score += 8;
-      score += Math.random() * 28;
+      if (t === preferred) score += 40;
+      else if (t >= 3) score += 8;
       candidates.push({ t, score, mcBefore });
     }
     if (!candidates.length) return null;
     const withTwoMc = candidates.filter((c) => c.mcBefore >= 2);
     const pool = withTwoMc.length ? withTwoMc : candidates;
-    pool.sort((a, b) => b.score - a.score);
-    const top = pool.slice(0, Math.min(3, pool.length));
-    return top[Math.floor(Math.random() * top.length)].t;
+    pool.sort((a, b) => b.score - a.score || a.t - b.t);
+    return pool[0].t;
   }
 
-  function assignMicroCredentials(intakeKey, plan, used) {
+  function assignMicroCredentials(intakeKey, plan, used, opts = {}) {
+    const skip = new Set(opts.skipTrimesters || []);
     const maxT = DATA.maxCoreTrimesters;
     for (let t = 1; t <= maxT; t++) {
+      if (skip.has(t)) continue;
       if (countUniqueMcScheduled(plan) >= DATA.mcCount) break;
       if (!canAssignMc(t, plan) || plan.mc[t - 1]) continue;
       const pick = bestMcForTrimester(intakeKey, t, plan, used);
@@ -1638,6 +1648,7 @@
       }
     }
     for (let t = 1; t <= maxT; t++) {
+      if (skip.has(t)) continue;
       if (countUniqueMcScheduled(plan) >= DATA.mcCount) break;
       if (!canAssignMc(t, plan) || plan.mc[t - 1]) continue;
       const pick = bestMcForTrimester(intakeKey, t, plan, used);
@@ -1651,13 +1662,16 @@
   function suggestPlan(intakeKey) {
     const plan = emptyPlan();
     const used = new Set();
-    const intake = DATA.intakes[intakeKey];
 
-    assignMicroCredentials(intakeKey, plan, used);
+    const reserveCcTri = hasFeature('wfeCc') ? [3] : [];
+    assignMicroCredentials(intakeKey, plan, used, { skipTrimesters: reserveCcTri });
 
     if (hasFeature('wfeCc')) {
       const ccTri = findCareerCatalystTrimester(intakeKey, plan, used);
       if (ccTri != null) plan.careerCatalystAt = ccTri;
+      if (countUniqueMcScheduled(plan) < DATA.mcCount) {
+        assignMicroCredentials(intakeKey, plan, used);
+      }
     }
 
     if (hasFeature('riwe')) {
